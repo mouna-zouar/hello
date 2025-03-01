@@ -3,10 +3,9 @@ const prisma = new PrismaClient();
 
 const createPermission = async (req, res) => {
     try {
-        const { name } = req.body;
-
+        const { model, operation } = req.body;
         const newPermission = await prisma.permission.create({
-            data: { name },
+            data: { model, operation }
         });
 
         res.status(201).json({ message: 'Permission créée avec succès', permission: newPermission });
@@ -29,11 +28,11 @@ const getAllPermissions = async (req, res) => {
 const updatePermission = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name } = req.body;
+        const { model, operation } = req.body;
 
         const permission = await prisma.permission.update({
             where: { id: parseInt(id) },
-            data: { name },
+            data: { model, operation }
         });
 
         res.status(200).json({ message: 'Permission mise à jour avec succès', permission });
