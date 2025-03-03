@@ -1,11 +1,9 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// ✅ Ajouter une permission à un rôle
 const addPermissionToRole = async (req, res) => {
     const { roleId, permissionId } = req.body;
     try {
-        // Vérifier si la permission est déjà associée au rôle
         const existingRolePermission = await prisma.rolePermission.findUnique({
             where: {
                 roleId_permissionId: { roleId, permissionId }
@@ -16,7 +14,6 @@ const addPermissionToRole = async (req, res) => {
             return res.status(400).json({ message: 'Cette permission est déjà attribuée à ce rôle.' });
         }
 
-        // Ajouter la permission au rôle
         const rolePermission = await prisma.rolePermission.create({
             data: { roleId, permissionId }
         });
@@ -28,11 +25,9 @@ const addPermissionToRole = async (req, res) => {
     }
 };
 
-// ✅ Supprimer une permission d'un rôle
 const removePermissionFromRole = async (req, res) => {
     const { roleId, permissionId } = req.params;
     try {
-        // Vérifier si la relation existe
         const rolePermission = await prisma.rolePermission.findUnique({
             where: {
                 roleId_permissionId: { roleId: parseInt(roleId), permissionId: parseInt(permissionId) }
@@ -43,7 +38,6 @@ const removePermissionFromRole = async (req, res) => {
             return res.status(404).json({ message: 'Relation entre le rôle et la permission non trouvée' });
         }
 
-        // Supprimer la relation
         await prisma.rolePermission.delete({
             where: {
                 roleId_permissionId: { roleId: parseInt(roleId), permissionId: parseInt(permissionId) }
@@ -57,11 +51,9 @@ const removePermissionFromRole = async (req, res) => {
     }
 };
 
-// ✅ Récupérer toutes les permissions d'un rôle
 const getPermissionsByRole = async (req, res) => {
     const { roleId } = req.params;
     try {
-        // Récupérer toutes les permissions associées à un rôle
         const rolePermissions = await prisma.rolePermission.findMany({
             where: { roleId: parseInt(roleId) },
             include: { permission: true }

@@ -1,85 +1,49 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// ✅ Ajouter une permission à un rôle
-const addPermissionToRole = async (req, res) => {
-    const { roleId, permissionId } = req.body;
+exports.getAllRoles = async (req, res) => {
     try {
-        // Vérifier si la permission est déjà associée au rôle
-        const existingRolePermission = await prisma.rolePermission.findUnique({
-            where: {
-                roleId_permissionId: { roleId, permissionId }
-            }
+        const roles = await prisma.role.findMany({
+            include: { department: true, permissions: true }
         });
-
-        if (existingRolePermission) {
-            return res.status(400).json({ message: 'Cette permission est déjà attribuée à ce rôle.' });
-        }
-
-        // Ajouter la permission au rôle
-        const rolePermission = await prisma.rolePermission.create({
-            data: { roleId, permissionId }
-        });
-
-        res.status(201).json(rolePermission);
+        res.json(roles);
     } catch (error) {
-        console.error('Erreur lors de l\'ajout de la permission au rôle :', error);
-        res.status(500).json({ error: 'Erreur serveur lors de l\'ajout de la permission au rôle' });
+        res.status(500).json({ error: "Erreur lors de la récupération des rôles" });
     }
 };
 
-// ✅ Supprimer une permission d'un rôle
-const removePermissionFromRole = async (req, res) => {
-    const { roleId, permissionId } = req.params;
+exports.createRole = async (req, res) => {
+    const { role, departmentId } = req.body;
     try {
-        // Vérifier si la relation existe
-        const rolePermission = await prisma.rolePermission.findUnique({
-            where: {
-                roleId_permissionId: { roleId: parseInt(roleId), permissionId: parseInt(permissionId) }
-            }
+        const newRole = await prisma.role.create({
+            data: { role, departmentId }
         });
-
-        if (!rolePermission) {
-            return res.status(404).json({ message: 'Relation entre le rôle et la permission non trouvée' });
-        }
-
-        // Supprimer la relation
-        await prisma.rolePermission.delete({
-            where: {
-                roleId_permissionId: { roleId: parseInt(roleId), permissionId: parseInt(permissionId) }
-            }
-        });
-
-        res.status(200).json({ message: 'Permission retirée du rôle avec succès' });
+        res.status(201).json(newRole);
     } catch (error) {
-        console.error('Erreur lors de la suppression de la permission du rôle :', error);
-        res.status(500).json({ error: 'Erreur serveur lors de la suppression de la permission du rôle' });
+        res.status(500).json({ error: "Erreur lors de la création du rôle" });
     }
 };
 
-// ✅ Récupérer toutes les permissions d'un rôle
-const getPermissionsByRole = async (req, res) => {
-    const { roleId } = req.params;
+exports.updateRole = async (req, res) => {
+    const { id } = req.params;
+    const { role, departmentId } = req.body;
     try {
-        // Récupérer toutes les permissions associées à un rôle
-        const rolePermissions = await prisma.rolePermission.findMany({
-            where: { roleId: parseInt(roleId) },
-            include: { permission: true }
+        const updatedRole = await prisma.role.update({
+            where: { id: parseInt(id) },
+            data: { role, departmentId }
         });
-
-        if (rolePermissions.length === 0) {
-            return res.status(404).json({ message: 'Aucune permission trouvée pour ce rôle' });
-        }
-
-        res.json(rolePermissions);
+        res.json(updatedRole);
     } catch (error) {
-        console.error('Erreur lors de la récupération des permissions du rôle :', error);
-        res.status(500).json({ error: 'Erreur serveur lors de la récupération des permissions du rôle' });
+        res.status(500).json({ error: "Erreur lors de la mise à jour du rôle" });
     }
 };
 
-module.exports = {
-    addPermissionToRole,
-    removePermissionFromRole,
-    getPermissionsByRole
+exports.deleteRole = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await prisma.role.delete({ where: { id: parseInt(id) } });
+        res.json({ message: "Rôle supprimé avec succès" });
+    } catch (error) {
+        res.status(500).json({ error: "Erreur lors de la suppression du rôle" });
+    }
 };

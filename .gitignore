@@ -1,10 +1,10 @@
 auth-service/node_modules
 employee-service/node_modules
-equipe-service/node_modules
+team-service/node_modules
 getway-service/node_modules
 
 getway-service/package-lock.json
-equipe-service/package-lock.json
+team-service/package-lock.json
 employee-service/package-lock.json
 auth-service/package-lock.json
 
