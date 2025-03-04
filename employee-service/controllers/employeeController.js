@@ -97,6 +97,22 @@ const deleteEmployee = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur" });
     }
 };
+const getEmployeesByTeamId = async (req, res) => {
+    const { teamId } = req.query;
+
+    try {
+        const employees = await prisma.employee.findMany({
+            where: {
+                teamId: parseInt(teamId, 10)
+            }
+        });
+
+        res.status(200).json(employees);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des employés:', error);
+        res.status(500).json({ error: 'Erreur serveur lors de la récupération des employés' });
+    }
+};
 const assignEmployeeToTeam = async (employeeId, teamId) => {
     try {
         const team = await getTeamById(teamId);
@@ -123,4 +139,5 @@ module.exports = {
     updateEmployee,
     deleteEmployee,
     assignEmployeeToTeam,
+    getEmployeesByTeamId
 };

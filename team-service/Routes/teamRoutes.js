@@ -6,11 +6,11 @@ const {
     updateTeam,
     deleteTeam,
     assignEmployeeToTeam,
-    searchTeamByName
+    searchTeamByName,getEmployeesByTeamId
 } = require('../controllers/teamController');
 
 const router = express.Router();
-
+router.get('/:teamId/employees', getEmployeesByTeamId);
 router.post('/', createTeam);
 router.get('/', getAllTeams);
 router.get('/:teamId', getTeamById);

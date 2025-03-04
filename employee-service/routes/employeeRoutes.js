@@ -5,7 +5,8 @@ const {
     getEmployeeById,
     updateEmployee,
     deleteEmployee,
-    assignEmployeeToTeam
+    assignEmployeeToTeam,
+    getEmployeesByTeamId
 } = require('../controllers/employeeController');
 const authMiddleware = require('../middlewares/authMiddleware');
 
@@ -15,6 +16,7 @@ router.post('/', authMiddleware, createEmployee);
 router.get('/', getAllEmployees);
 router.get('/:id', getEmployeeById);
 router.put('/:id', updateEmployee);
+router.get('/team/employee', getEmployeesByTeamId);
 router.delete('/:id', deleteEmployee);
 router.put('/assign/:employeeId/:teamId', async (req, res) => {
     const { employeeId, teamId } = req.params;

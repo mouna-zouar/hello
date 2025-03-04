@@ -1,7 +1,24 @@
+const axios = require('axios');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { getEmployeeById, updateEmployee } = require('../services/employeeService');
+const getEmployeesByTeamId = async (req, res) => {
+    const { teamId } = req.params;
 
+    try {
+        // Appel au microservice Employé pour obtenir tous les employés associés à cette équipe
+        const employeeResponse = await axios.get(`http://localhost:3002/employees?teamId=${teamId}`);
+
+        if (employeeResponse.status === 200) {
+            return res.status(200).json(employeeResponse.data);
+        }
+
+        res.status(404).json({ error: "Aucun employé trouvé pour cette équipe" });
+    } catch (error) {
+        console.error('Erreur lors de la récupération des employés pour cette équipe:', error.message);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération des employés" });
+    }
+};
 const searchTeamByName = async (req, res) => {
     const { name } = req.query;
 
@@ -171,5 +188,5 @@ module.exports = {
     getTeamById,
     updateTeam,
     deleteTeam,
-    assignEmployeeToTeam
+    assignEmployeeToTeam,getEmployeesByTeamId
 };
