@@ -161,6 +161,81 @@ const prioritizeTasks = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la priorisation des tâches" });
     }
 };
+// ✅ Mettre à jour le statut d'une tâche (glisser-déposer)
+const updateTaskStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Vérifier si le statut est valide
+    if (!["TODO", "IN_PROGRESS", "DONE"].includes(status)) {
+        return res.status(400).json({ error: "Statut invalide" });
+    }
+
+    try {
+        const updatedTask = await prisma.task.update({
+            where: { id: parseInt(id) },
+            data: { status }
+        });
+
+        res.status(200).json({ message: "Statut mis à jour", task: updatedTask });
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour du statut:', error);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+};
+// ✅ Récupérer les tâches d'un sprint
+const getTasksBySprintId = async (req, res) => {
+    const { sprintId } = req.params;
+
+    try {
+        const tasks = await prisma.task.findMany({
+            where: { sprintId: parseInt(sprintId) }
+        });
+
+        res.status(200).json(tasks);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des tâches du sprint:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération des tâches" });
+    }
+};
+
+// ✅ Assigner des tâches à un sprint
+const assignTasksToSprint = async (req, res) => {
+    const { sprintId, taskIds } = req.body;
+
+    if (!sprintId || !taskIds || !Array.isArray(taskIds)) {
+        return res.status(400).json({ error: "Sprint ID et taskIds (tableau) sont requis" });
+    }
+
+    try {
+        const updatedTasks = await prisma.task.updateMany({
+            where: { id: { in: taskIds.map(id => parseInt(id)) } },
+            data: { sprintId: parseInt(sprintId) }
+        });
+
+        res.status(200).json({ message: "Tâches assignées au sprint", updatedTasks });
+    } catch (error) {
+        console.error('Erreur lors de l’assignation des tâches au sprint:', error);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+};
+
+// ✅ Détacher toutes les tâches d’un sprint
+const unassignTasksFromSprint = async (req, res) => {
+    const { sprintId } = req.params;
+
+    try {
+        const updatedTasks = await prisma.task.updateMany({
+            where: { sprintId: parseInt(sprintId) },
+            data: { sprintId: null }
+        });
+
+        res.status(200).json({ message: "Tâches détachées du sprint", updatedTasks });
+    } catch (error) {
+        console.error('Erreur lors du détachement des tâches du sprint:', error);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+};
 
 module.exports = {
     createTask,
@@ -170,5 +245,9 @@ module.exports = {
     deleteTask,
     getTasksByProjectId,
     getProjectWithTasks,
-    prioritizeTasks
+    prioritizeTasks,
+    updateTaskStatus,
+    getTasksBySprintId,
+    assignTasksToSprint,
+    unassignTasksFromSprint
 };
