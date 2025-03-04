@@ -6,7 +6,6 @@ const getEmployeesByTeamId = async (req, res) => {
     const { teamId } = req.params;
 
     try {
-        // Appel au microservice Employé pour obtenir tous les employés associés à cette équipe
         const employeeResponse = await axios.get(`http://localhost:3002/employees?teamId=${teamId}`);
 
         if (employeeResponse.status === 200) {

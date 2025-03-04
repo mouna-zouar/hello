@@ -37,7 +37,7 @@ const getEmployeesByProjectId = async (req, res) => {
     const { projectId } = req.params;
 
     try {
-        const projectEmployees = await prisma.projectEmployee.findMany({ // Utilisation de `prisma` ici
+        const projectEmployees = await prisma.projectEmployee.findMany({
             where: { projectId: parseInt(projectId) }
         });
 
@@ -47,7 +47,7 @@ const getEmployeesByProjectId = async (req, res) => {
 
         const employeePromises = projectEmployees.map(async (projectEmployee) => {
             const employeeResponse = await axios.get(`http://localhost:3002/employees/${projectEmployee.employeeId}`);
-            return employeeResponse.data;  // Ajoute l'information de l'employé à la réponse
+            return employeeResponse.data;
         });
 
         const employees = await Promise.all(employeePromises);

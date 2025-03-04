@@ -30,6 +30,25 @@ const getAllProjects = async (req, res) => {
     }
 };
 
+const getProjectById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const project = await prisma.project.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!project) {
+            return res.status(404).json({ message: 'Projet non trouvé' });
+        }
+
+        res.json(project);
+    } catch (error) {
+        console.error('Erreur lors de la récupération du projet:', error);
+        res.status(500).json({ message: 'Erreur serveur lors de la récupération du projet' });
+    }
+};
+
 const updateProject = async (req, res) => {
     const { id } = req.params;
     const { name, description, type } = req.body;
@@ -75,6 +94,7 @@ const deleteProject = async (req, res) => {
 module.exports = {
     createProject,
     getAllProjects,
+    getProjectById,
     updateProject,
     deleteProject,
 };
