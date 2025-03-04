@@ -8,7 +8,7 @@ const getEmployeeById = async (employeeId) => {
         if (response.data) {
             return response.data;
         } else {
-            throw new Error("Employé non trouvé");
+            return new Error("Employé non trouvé");
         }
     } catch (error) {
         console.error("Erreur lors de la récupération de l'employé:", error);
@@ -24,7 +24,7 @@ const updateEmployee = async (employeeId, updatedData) => {
         if (response.data) {
             return response.data;
         } else {
-            throw new Error("Échec de la mise à jour de l'employé");
+            return new Error("Échec de la mise à jour de l'employé");
         }
     } catch (error) {
         console.error("Erreur lors de la mise à jour de l'employé:", error);
