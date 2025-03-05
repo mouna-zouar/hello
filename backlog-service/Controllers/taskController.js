@@ -57,7 +57,7 @@ const getTaskById = async (req, res) => {
 const updateTask = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, status, priority, sprintId, projectId } = req.body;
+        const { title, description, status, priority, assignedTo,sprintId, projectId } = req.body;
 
         const taskId = parseInt(id);
         if (isNaN(taskId)) {
@@ -76,6 +76,7 @@ const updateTask = async (req, res) => {
                 description: description || existingTask.description,
                 status: status || existingTask.status,
                 priority: priority || existingTask.priority,
+                assignedTo: assignedTo || existingTask.assignedTo,
                 sprintId: sprintId !== undefined ? sprintId : existingTask.sprintId,
                 projectId: projectId !== undefined ? projectId : existingTask.projectId,
             }
@@ -233,6 +234,30 @@ const unassignTasksFromSprint = async (req, res) => {
     }
 };
 
+const getTasksByAssignedTo = async (req, res) => {
+    const { assignedTo } = req.params;
+
+    if (!assignedTo) {
+        return res.status(400).json({ error: "Le paramètre 'assignedTo' est requis" });
+    }
+
+    try {
+        const tasks = await prisma.task.findMany({
+            where: { assignedTo: parseInt(assignedTo) },
+        });
+
+        if (tasks.length === 0) {
+            return res.status(404).json({ error: "Aucune tâche trouvée pour cet utilisateur" });
+        }
+
+        res.status(200).json(tasks);
+    } catch (error) {
+        console.error('Erreur lors de la recherche des tâches assignées:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la recherche des tâches assignées" });
+    }
+};
+
+
 module.exports = {
     createTask,
     getAllTasks,
@@ -245,5 +270,6 @@ module.exports = {
     updateTaskStatus,
     getTasksBySprintId,
     assignTasksToSprint,
-    unassignTasksFromSprint
+    unassignTasksFromSprint,
+    getTasksByAssignedTo
 };

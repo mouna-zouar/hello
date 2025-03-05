@@ -192,9 +192,9 @@ const closeSprint = async (req, res) => {
 
             try {
                 await updateTaskSprint(task.id, nextSprint.id, sprint.projectId);
-                console.log(`✅ Après mise à jour : Tâche ${task.id} -> sprintId : ${nextSprint.id}`);
+                console.log(` Après mise à jour : Tâche ${task.id} -> sprintId : ${nextSprint.id}`);
             } catch (updateError) {
-                console.error(`❌ Erreur lors de la mise à jour de la tâche ${task.id} :`, updateError);
+                console.error(` Erreur lors de la mise à jour de la tâche ${task.id} :`, updateError);
             }
         }
 

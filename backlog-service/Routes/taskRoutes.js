@@ -12,7 +12,8 @@ const {
     updateTaskStatus,
     getTasksBySprintId,
     assignTasksToSprint,
-    unassignTasksFromSprint
+    unassignTasksFromSprint,
+    getTasksByAssignedTo
 } = require('../Controllers/taskController');
 
 router.post('/', createTask);
@@ -27,4 +28,6 @@ router.put('/:id/status', updateTaskStatus);
 router.put('/assign', assignTasksToSprint);
 router.get('/tasks', getTasksBySprintId);
 router.put('/unassign/:sprintId', unassignTasksFromSprint);
+router.get('/assignedTo/:assignedTo', getTasksByAssignedTo);
+
 module.exports = router;
