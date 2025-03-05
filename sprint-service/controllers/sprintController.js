@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { getProjectById } = require('../services/projectService');
-const { getTasksBySprintId } = require('../services/taskService');
+const { getTasksBySprintId,updateTaskSprint } = require('../services/taskService');
 
 const prisma = new PrismaClient();
 
@@ -150,12 +150,77 @@ const getSprintWithTasks = async (req, res) => {
         console.error('Erreur lors de la récupération du sprint et de ses tâches:', error);
         res.status(500).json({ error: 'Erreur serveur' });
     }
-};module.exports = {
+};
+
+
+const closeSprint = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const sprint = await prisma.sprint.findUnique({ where: { id: parseInt(id) } });
+        console.log(`Sprint récupéré :`, sprint);
+
+        if (!sprint) {
+            return res.status(404).json({ error: 'Sprint non trouvé' });
+        }
+
+        const tasks = await getTasksBySprintId(id);
+        console.log(`Tâches du sprint ${id} récupérées :`, tasks);
+
+        const unfinishedTasks = tasks.filter(task => task.status !== 'Done');
+        console.log(`Tâches non terminées :`, unfinishedTasks);
+
+        let nextSprint = await prisma.sprint.findFirst({
+            where: { startDate: { gt: sprint.endDate } },
+            orderBy: { startDate: 'asc' }
+        });
+        console.log(`Sprint suivant trouvé :`, nextSprint);
+
+        if (!nextSprint) {
+            nextSprint = await prisma.sprint.create({
+                data: {
+                    name: `Sprint ${sprint.id + 1}`,
+                    startDate: new Date(sprint.endDate),
+                    endDate: new Date(new Date(sprint.endDate).setDate(new Date(sprint.endDate).getDate() + 14)) // 2 semaines après
+                }
+            });
+            console.log(`Nouveau sprint créé :`, nextSprint);
+        }
+
+        for (const task of unfinishedTasks) {
+            console.log(`🔹 Avant mise à jour : Tâche ${task.id} -> sprintId : ${task.sprintId}`);
+
+            try {
+                await updateTaskSprint(task.id, nextSprint.id, sprint.projectId);
+                console.log(`✅ Après mise à jour : Tâche ${task.id} -> sprintId : ${nextSprint.id}`);
+            } catch (updateError) {
+                console.error(`❌ Erreur lors de la mise à jour de la tâche ${task.id} :`, updateError);
+            }
+        }
+
+        await prisma.sprint.update({
+            where: { id: parseInt(id) },
+            data: { status: 'Closed' }
+        });
+
+        res.json({ message: `Sprint ${id} clôturé. ${unfinishedTasks.length} tâches déplacées au sprint ${nextSprint.id}.` });
+
+    } catch (error) {
+        console.error('❌ Erreur lors de la clôture du sprint:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+};
+
+
+
+
+module.exports = {
     createSprint,
     getAllSprints,
     getSprintById,
     updateSprint,
     deleteSprint,
     getSprintsByProjectId,
-    getSprintWithTasks
+    getSprintWithTasks,
+    closeSprint
 };

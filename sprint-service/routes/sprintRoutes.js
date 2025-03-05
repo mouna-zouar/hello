@@ -6,7 +6,7 @@ const {
     updateSprint,
     deleteSprint,
     getSprintsByProjectId,
-    getSprintWithTasks
+    getSprintWithTasks,closeSprint
 
 } = require('../controllers/sprintController');
 
@@ -22,6 +22,7 @@ router.put('/:id', updateSprint);
 
 router.delete('/:id', deleteSprint);
 router.get('/sprints/:id', getSprintWithTasks);
+router.put('/:id/close', closeSprint);
 
 router.get('/project/:projectId', getSprintsByProjectId);
 

@@ -55,38 +55,36 @@ const getTaskById = async (req, res) => {
 };
 
 const updateTask = async (req, res) => {
-    const { id } = req.params;
-    const { title, description, priority, status, projectId } = req.body;
-
     try {
-        const task = await prisma.task.findUnique({ where: { id: parseInt(id) } });
+        const { id } = req.params;
+        const { title, description, status, priority, sprintId, projectId } = req.body;
 
-        if (!task) {
-            return res.status(404).json({ error: "Tâche non trouvée" });
+        const taskId = parseInt(id);
+        if (isNaN(taskId)) {
+            return res.status(400).json({ error: "L'ID de la tâche est invalide." });
         }
 
-        if (projectId) {
-            const project = await getProjectById(parseInt(projectId));
-            if (!project) {
-                return res.status(404).json({ error: "Projet non trouvé" });
-            }
+        const existingTask = await prisma.task.findUnique({ where: { id: taskId } });
+        if (!existingTask) {
+            return res.status(404).json({ error: "Tâche non trouvée." });
         }
 
         const updatedTask = await prisma.task.update({
-            where: { id: parseInt(id) },
+            where: { id: taskId },
             data: {
-                title: title || task.title,
-                description: description || task.description,
-                priority: priority || task.priority,
-                status: status || task.status,
-                projectId: projectId ? parseInt(projectId) : task.projectId
+                title: title || existingTask.title,
+                description: description || existingTask.description,
+                status: status || existingTask.status,
+                priority: priority || existingTask.priority,
+                sprintId: sprintId !== undefined ? sprintId : existingTask.sprintId,
+                projectId: projectId !== undefined ? projectId : existingTask.projectId,
             }
         });
 
-        res.status(200).json({ message: "Tâche mise à jour avec succès", task: updatedTask });
+        return res.status(200).json(updatedTask);
     } catch (error) {
-        console.error('Erreur lors de la mise à jour de la tâche:', error);
-        res.status(500).json({ error: "Erreur serveur lors de la mise à jour de la tâche" });
+        console.error("Erreur lors de la mise à jour de la tâche:", error);
+        return res.status(500).json({ error: "Erreur interne du serveur." });
     }
 };
 
@@ -161,7 +159,7 @@ const prioritizeTasks = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la priorisation des tâches" });
     }
 };
-// ✅ Mettre à jour le statut d'une tâche (glisser-déposer)
+
 const updateTaskStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
@@ -183,7 +181,7 @@ const updateTaskStatus = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur" });
     }
 };
-// ✅ Récupérer les tâches d'un sprint
+
 const getTasksBySprintId = async (req, res) => {
     const { sprintId } = req.params;
 
@@ -199,7 +197,6 @@ const getTasksBySprintId = async (req, res) => {
     }
 };
 
-// ✅ Assigner des tâches à un sprint
 const assignTasksToSprint = async (req, res) => {
     const { sprintId, taskIds } = req.body;
 
@@ -220,7 +217,6 @@ const assignTasksToSprint = async (req, res) => {
     }
 };
 
-// ✅ Détacher toutes les tâches d’un sprint
 const unassignTasksFromSprint = async (req, res) => {
     const { sprintId } = req.params;
 
