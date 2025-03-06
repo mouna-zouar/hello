@@ -1,13 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const taskRoutes = require('./Routes/taskRoutes');
+const backlogRoutes = require('./Routes/backlogRoutes');
 
 const app = express();
-const port = 3006;
+const port = 3008;
 
 app.use(bodyParser.json());
+app.use('/api/backlogs', backlogRoutes);
 
-app.use('/api/tasks', taskRoutes);
 
 app.listen(port, () => {
     console.log(`Backlog Serveur démarré sur ${port}`);
