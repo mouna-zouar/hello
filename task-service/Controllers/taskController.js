@@ -1,31 +1,59 @@
 const { PrismaClient } = require('@prisma/client');
 const { getProjectById } = require('../services/projectService');
+const { getBacklogById } = require('../services/backlogService');
+const { getSprintById } = require('../services/sprintService');
 
 const prisma = new PrismaClient();
 
-const createTask = async (req, res) => {
-    const { title, description, priority, status, projectId } = req.body;
 
-    if (!title || !priority || !status || !projectId) {
-        return res.status(400).json({ error: "Tous les champs sont requis (title, priority, status, projectId)" });
+const createTask = async (req, res) => {
+    const { title, description, priority, status, type, projectId, backlogId, sprintId, parentId, assignedTo } = req.body;
+
+    if (!title || !priority || !status || !projectId || !backlogId || !sprintId) {
+        return res.status(400).json({ error: "Les champs 'title', 'priority', 'status', 'projectId', 'backlogId', et 'sprintId' sont requis." });
+    }
+
+    const parsedProjectId = parseInt(projectId);
+    const parsedBacklogId = parseInt(backlogId);
+    const parsedSprintId = parseInt(sprintId);
+
+    if (isNaN(parsedProjectId) || isNaN(parsedBacklogId) || isNaN(parsedSprintId)) {
+        return res.status(400).json({ error: "Les ID de projet, backlog ou sprint ne sont pas valides." });
     }
 
     try {
-        const project = await getProjectById(parseInt(projectId));
-        if (!project) {
-            return res.status(404).json({ error: "Projet non trouvé" });
+        const [project, backlog, sprint] = await Promise.all([
+            getProjectById(parsedProjectId),
+            getBacklogById(parsedBacklogId),
+            getSprintById(parsedSprintId)
+        ]);
+
+        if (!project || !backlog || !sprint) {
+            return res.status(404).json({ error: "Projet, backlog ou sprint non trouvé." });
         }
 
         const newTask = await prisma.task.create({
-            data: { title, description, priority, status, projectId: parseInt(projectId) }
+            data: {
+                title,
+                description,
+                priority,
+                status,
+                type,
+                projectId: parsedProjectId,
+                backlogId: parsedBacklogId,
+                sprintId: parsedSprintId,
+                parentId: parentId || null,
+                assignedTo: assignedTo || null
+            }
         });
 
         res.status(201).json({ message: "Tâche créée avec succès", task: newTask });
     } catch (error) {
         console.error('Erreur lors de la création de la tâche:', error);
-        res.status(500).json({ error: "Erreur serveur lors de la création de la tâche" });
+        res.status(500).json({ error: "Erreur serveur lors de la création de la tâche." });
     }
 };
+
 
 const getAllTasks = async (req, res) => {
     try {
@@ -57,29 +85,16 @@ const getTaskById = async (req, res) => {
 const updateTask = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, description, status, priority, assignedTo,sprintId, projectId } = req.body;
+        const { title, description, status, priority, assignedTo, sprintId, projectId, backlogId, parentId } = req.body;
 
-        const taskId = parseInt(id);
-        if (isNaN(taskId)) {
-            return res.status(400).json({ error: "L'ID de la tâche est invalide." });
-        }
-
-        const existingTask = await prisma.task.findUnique({ where: { id: taskId } });
+        const existingTask = await prisma.task.findUnique({ where: { id: parseInt(id) } });
         if (!existingTask) {
             return res.status(404).json({ error: "Tâche non trouvée." });
         }
 
         const updatedTask = await prisma.task.update({
-            where: { id: taskId },
-            data: {
-                title: title || existingTask.title,
-                description: description || existingTask.description,
-                status: status || existingTask.status,
-                priority: priority || existingTask.priority,
-                assignedTo: assignedTo || existingTask.assignedTo,
-                sprintId: sprintId !== undefined ? sprintId : existingTask.sprintId,
-                projectId: projectId !== undefined ? projectId : existingTask.projectId,
-            }
+            where: { id: parseInt(id) },
+            data: { title, description, status, priority, assignedTo, sprintId, projectId, backlogId, parentId }
         });
 
         return res.status(200).json(updatedTask);
@@ -114,6 +129,21 @@ const getTasksByProjectId = async (req, res) => {
     try {
         const tasks = await prisma.task.findMany({
             where: { projectId: parseInt(projectId) }
+        });
+
+        res.status(200).json(tasks);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des tâches par projet:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération des tâches" });
+    }
+};
+
+const getTasksByBacklogId = async (req, res) => {
+    const { backlogId } = req.params;
+
+    try {
+        const tasks = await prisma.task.findMany({
+            where: { backlogId: parseInt(backlogId) }
         });
 
         res.status(200).json(tasks);
@@ -257,6 +287,31 @@ const getTasksByAssignedTo = async (req, res) => {
     }
 };
 
+const getEpicWithUserStories = async (req, res) => {
+    try {
+        const { epicId } = req.params;
+
+        const epic = await prisma.task.findUnique({
+            where: { id: parseInt(epicId) },
+            include: {
+                subTasks: {
+                    include: {
+                        subTasks: true,
+                    },
+                },
+            },
+        });
+
+        if (!epic) {
+            return res.status(404).json({ error: "Epic non trouvé." });
+        }
+
+        res.status(200).json(epic);
+    } catch (error) {
+        console.error("Erreur lors de la récupération de l'Epic:", error);
+        res.status(500).json({ error: "Erreur serveur." });
+    }
+};
 
 module.exports = {
     createTask,
@@ -271,5 +326,8 @@ module.exports = {
     getTasksBySprintId,
     assignTasksToSprint,
     unassignTasksFromSprint,
-    getTasksByAssignedTo
+    getTasksByAssignedTo,
+    getTasksByBacklogId,
+    getEpicWithUserStories
+
 };
