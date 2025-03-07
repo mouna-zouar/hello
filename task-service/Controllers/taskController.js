@@ -312,6 +312,36 @@ const getEpicWithUserStories = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur." });
     }
 };
+const getTasksGroupedByBacklog = async (req, res) => {
+    try {
+        // Récupérer toutes les tâches avec leur backlogId
+        const tasks = await prisma.task.findMany({
+            include: {
+                backlog: true, // Inclure les informations du backlog
+            },
+            where: {
+                status: "Backlog", // Seulement les tâches en backlog
+            },
+        });
+
+        // Grouper les tâches par backlogId
+        const groupedTasks = tasks.reduce((acc, task) => {
+            // Si le groupe pour ce backlogId n'existe pas encore, on le crée
+            if (!acc[task.backlogId]) {
+                acc[task.backlogId] = [];
+            }
+            // Ajouter la tâche au groupe correspondant
+            acc[task.backlogId].push(task);
+            return acc;
+        }, {});
+
+        // Renvoi des tâches groupées
+        res.status(200).json({ tasks: groupedTasks });
+    } catch (error) {
+        console.error("Erreur lors de la récupération des tâches groupées:", error);
+        res.status(500).json({ error: "Erreur interne du serveur." });
+    }
+};
 
 module.exports = {
     createTask,
@@ -328,6 +358,6 @@ module.exports = {
     unassignTasksFromSprint,
     getTasksByAssignedTo,
     getTasksByBacklogId,
-    getEpicWithUserStories
+    getEpicWithUserStories,getTasksGroupedByBacklog
 
 };

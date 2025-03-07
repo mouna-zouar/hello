@@ -15,7 +15,8 @@ const {
     unassignTasksFromSprint,
     getTasksByAssignedTo,
     getTasksByBacklogId,
-    getEpicWithUserStories
+    getEpicWithUserStories,
+    getTasksGroupedByBacklog
 
 } = require('../Controllers/taskController');
 
@@ -37,6 +38,7 @@ router.get('/tasks', getTasksBySprintId);
 router.put('/unassign/:sprintId', unassignTasksFromSprint);
 router.get('/assignedTo/:assignedTo', getTasksByAssignedTo);
 router.get('/epic/:epicId/userstories', getEpicWithUserStories);
+router.get('/tasks/grouped', getTasksGroupedByBacklog);
 
 
 module.exports = router;

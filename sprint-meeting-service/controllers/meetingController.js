@@ -53,7 +53,6 @@ const createSprintMeeting = async (req, res) => {
     }
 };
 
-// Récupérer toutes les réunions
 const getSprintMeetings = async (req, res) => {
     try {
         const meetings = await prisma.sprintMeeting.findMany();
@@ -64,7 +63,6 @@ const getSprintMeetings = async (req, res) => {
     }
 };
 
-// Récupérer une réunion spécifique par ID
 const getSprintMeetingById = async (req, res) => {
     const { id } = req.params;
 
@@ -84,7 +82,6 @@ const getSprintMeetingById = async (req, res) => {
     }
 };
 
-// **Mettre à jour une réunion de sprint**
 const updateSprintMeeting = async (req, res) => {
     const { id } = req.params;
     const { meetingDate, agenda, participants } = req.body;
@@ -115,7 +112,6 @@ const updateSprintMeeting = async (req, res) => {
     }
 };
 
-// **Supprimer une réunion de sprint**
 const deleteSprintMeeting = async (req, res) => {
     const { id } = req.params;
 
@@ -135,7 +131,6 @@ const deleteSprintMeeting = async (req, res) => {
     }
 };
 
-// **Récupérer toutes les réunions liées à un sprint spécifique**
 const getSprintMeetingsBySprintId = async (req, res) => {
     const { sprintId } = req.params;
 

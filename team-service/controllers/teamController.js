@@ -187,5 +187,6 @@ module.exports = {
     getTeamById,
     updateTeam,
     deleteTeam,
-    assignEmployeeToTeam,getEmployeesByTeamId
+    assignEmployeeToTeam,
+    getEmployeesByTeamId
 };
