@@ -2,9 +2,17 @@ auth-service/node_modules
 employee-service/node_modules
 team-service/node_modules
 getway-service/node_modules
+project-service/node_modules
+sprint-service/node_modules
+task-service/node_modules
+backlog-service/node_modules
+sprint-meeting-service/node_modules
 
 getway-service/package-lock.json
 team-service/package-lock.json
 employee-service/package-lock.json
 auth-service/package-lock.json
-
+project-service/package-lock.json
+task-service/package-lock.json
+backlog-service/package-lock.json
+sprint-meeting-service/package-lock.json

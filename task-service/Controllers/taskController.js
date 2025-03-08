@@ -247,6 +247,25 @@ const assignTasksToSprint = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur" });
     }
 };
+const assignTasksToBacklog = async (req, res) => {
+    const { backlogId, taskIds } = req.body;
+
+    if (!backlogId || !taskIds || !Array.isArray(taskIds)) {
+        return res.status(400).json({ error: "backlogId et taskIds (tableau) sont requis" });
+    }
+
+    try {
+        const updatedTasks = await prisma.task.updateMany({
+            where: { id: { in: taskIds.map(id => parseInt(id)) } },
+            data: { sprintId: parseInt(backlogId) }
+        });
+
+        res.status(200).json({ message: "Tâches assignées au sprint", updatedTasks });
+    } catch (error) {
+        console.error('Erreur lors de l’assignation des tâches au sprint:', error);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+};
 
 const unassignTasksFromSprint = async (req, res) => {
     const { sprintId } = req.params;
@@ -314,7 +333,6 @@ const getEpicWithUserStories = async (req, res) => {
 };
 const getTasksGroupedByBacklog = async (req, res) => {
     try {
-        // Récupérer toutes les tâches avec leur backlogId
         const tasks = await prisma.task.findMany({
             include: {
                 backlog: true, // Inclure les informations du backlog
@@ -324,18 +342,14 @@ const getTasksGroupedByBacklog = async (req, res) => {
             },
         });
 
-        // Grouper les tâches par backlogId
         const groupedTasks = tasks.reduce((acc, task) => {
-            // Si le groupe pour ce backlogId n'existe pas encore, on le crée
             if (!acc[task.backlogId]) {
                 acc[task.backlogId] = [];
             }
-            // Ajouter la tâche au groupe correspondant
             acc[task.backlogId].push(task);
             return acc;
         }, {});
 
-        // Renvoi des tâches groupées
         res.status(200).json({ tasks: groupedTasks });
     } catch (error) {
         console.error("Erreur lors de la récupération des tâches groupées:", error);
@@ -358,6 +372,8 @@ module.exports = {
     unassignTasksFromSprint,
     getTasksByAssignedTo,
     getTasksByBacklogId,
-    getEpicWithUserStories,getTasksGroupedByBacklog
+    getEpicWithUserStories,
+    getTasksGroupedByBacklog,
+    assignTasksToBacklog
 
 };

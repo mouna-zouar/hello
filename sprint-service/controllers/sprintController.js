@@ -298,6 +298,37 @@ const getBacklogWithSprints = async (req, res) => {
     }
 };
 
+const openSprint = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const sprint = await prisma.sprint.findUnique({
+            where: { id: parseInt(id) }
+        });
+
+        if (!sprint) {
+            return res.status(404).json({ message: "Sprint non trouvé" });
+        }
+
+        if (sprint.status === 'Open') {
+            return res.status(400).json({ message: "Le sprint est déjà ouvert." });
+        }
+
+        const updatedSprint = await prisma.sprint.update({
+            where: { id: parseInt(id) },
+            data: {
+                status: 'Open',
+                startDate: new Date()
+            }
+        });
+
+        res.status(200).json({ message: `Sprint ${id} ouvert avec succès.`, sprint: updatedSprint });
+    } catch (error) {
+        console.error("Erreur lors de l'ouverture du sprint:", error);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
 module.exports = {
     createSprint,
     getAllSprints,
@@ -310,5 +341,6 @@ module.exports = {
     closeSprint,
     getSprintsBybacklogId,
     getProjectWithSprints,
+    openSprint
 
 };

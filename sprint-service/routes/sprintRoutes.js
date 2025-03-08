@@ -10,7 +10,8 @@ const {
     closeSprint,
     getSprintsBybacklogId,
     getProjectWithSprints,
-    getBacklogWithSprints
+    getBacklogWithSprints,
+    openSprint
 
 } = require('../controllers/sprintController');
 
@@ -29,6 +30,7 @@ router.get('/sprints/:id', getSprintWithTasks);
 router.get('/project/:projectId/sprints', getProjectWithSprints);
 router.get('/backlog/:backlogId/sprints', getBacklogWithSprints);
 router.put('/:id/close', closeSprint);
+router.patch('/:id/open', openSprint);
 
 router.get('/project/:projectId', getSprintsByProjectId);
 router.get('/backlog/:backlogId', getSprintsBybacklogId);
