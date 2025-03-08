@@ -1,15 +1,19 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-
+const {getTeamById} = require ("../services/equipeService");
 const createProject = async (req, res) => {
-    const { name, description, type } = req.body;
-
+    const { name, description, type,teamId } = req.body;
     try {
+            const team = await getTeamById(teamId);
+            if (!team) {
+                return res.status(404).json({ error: "Employé non trouvé dans le microservice Employé" });
+            }
         const newProject = await prisma.project.create({
             data: {
                 name,
                 description,
                 type,
+                teamId
             },
         });
 
@@ -51,17 +55,24 @@ const getProjectById = async (req, res) => {
 
 const updateProject = async (req, res) => {
     const { id } = req.params;
-    const { name, description, type } = req.body;
+    const { name, description, type, teamId } = req.body;
 
     try {
+        const team = await getTeamById(teamId);
+        if (!team) {
+            return res.status(404).json({ error: "L'équipe avec l'ID fourni n'a pas été trouvée." });
+        }
+
         const updatedProject = await prisma.project.update({
             where: { id: parseInt(id) },
             data: {
                 name,
                 description,
                 type,
+                teamId
             },
         });
+
         res.json(updatedProject);
     } catch (error) {
         console.error('Erreur lors de la mise à jour du projet:', error);

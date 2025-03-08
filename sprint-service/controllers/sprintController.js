@@ -72,7 +72,7 @@ const getSprintById = async (req, res) => {
 
 const updateSprint = async (req, res) => {
     const { id } = req.params;
-    const { name, startDate, endDate, projectId,backlogId } = req.body;
+    const { name, startDate, endDate, projectId, backlogId } = req.body;
 
     try {
         const sprint = await prisma.sprint.findUnique({ where: { id: parseInt(id) } });
@@ -87,10 +87,11 @@ const updateSprint = async (req, res) => {
                 return res.status(404).json({ message: "Projet non trouvé" });
             }
         }
+
         if (backlogId) {
             const backlog = await getBacklogById(parseInt(backlogId));
             if (!backlog) {
-                return res.status(404).json({ message: "Projet non trouvé" });
+                return res.status(404).json({ message: "Backlog non trouvé" });
             }
         }
 
@@ -101,7 +102,7 @@ const updateSprint = async (req, res) => {
                 startDate: startDate ? new Date(startDate) : sprint.startDate,
                 endDate: endDate ? new Date(endDate) : sprint.endDate,
                 projectId: projectId ? parseInt(projectId) : sprint.projectId,
-                backlogId: backlogId   ? parseInt(backlogId) : backlogId
+                backlogId: backlogId ? parseInt(backlogId) : sprint.backlogId,
             }
         });
 

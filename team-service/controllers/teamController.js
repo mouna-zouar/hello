@@ -2,6 +2,7 @@ const axios = require('axios');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { getEmployeeById, updateEmployee } = require('../services/employeeService');
+
 const getEmployeesByTeamId = async (req, res) => {
     const { teamId } = req.params;
 
@@ -18,6 +19,7 @@ const getEmployeesByTeamId = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la récupération des employés" });
     }
 };
+
 const searchTeamByName = async (req, res) => {
     const { name } = req.query;
 

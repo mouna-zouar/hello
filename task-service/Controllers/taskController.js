@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const { getProjectById } = require('../services/projectService');
 const { getBacklogById } = require('../services/backlogService');
 const { getSprintById } = require('../services/sprintService');
+const {getEmployeeById} = require('../services/employeeService');
 
 const prisma = new PrismaClient();
 
@@ -16,8 +17,10 @@ const createTask = async (req, res) => {
     const parsedProjectId = parseInt(projectId);
     const parsedBacklogId = parseInt(backlogId);
     const parsedSprintId = parseInt(sprintId);
+    const parsedassignedTo = parseInt(assignedTo);
 
-    if (isNaN(parsedProjectId) || isNaN(parsedBacklogId) || isNaN(parsedSprintId)) {
+
+    if (isNaN(parsedProjectId) || isNaN(parsedBacklogId) || isNaN(parsedSprintId) || isNaN(parsedassignedTo)) {
         return res.status(400).json({ error: "Les ID de projet, backlog ou sprint ne sont pas valides." });
     }
 
@@ -25,7 +28,8 @@ const createTask = async (req, res) => {
         const [project, backlog, sprint] = await Promise.all([
             getProjectById(parsedProjectId),
             getBacklogById(parsedBacklogId),
-            getSprintById(parsedSprintId)
+            getSprintById(parsedSprintId),
+            getEmployeeById(parsedassignedTo)
         ]);
 
         if (!project || !backlog || !sprint) {
@@ -43,7 +47,7 @@ const createTask = async (req, res) => {
                 backlogId: parsedBacklogId,
                 sprintId: parsedSprintId,
                 parentId: parentId || null,
-                assignedTo: assignedTo || null
+                assignedTo: parsedassignedTo
             }
         });
 
@@ -83,18 +87,48 @@ const getTaskById = async (req, res) => {
 };
 
 const updateTask = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { title, description, status, priority, assignedTo, sprintId, projectId, backlogId, parentId } = req.body;
+    const { id } = req.params;
+    const { title, description, status, priority, assignedTo, sprintId, projectId, backlogId, parentId } = req.body;
 
+    const parsedProjectId = parseInt(projectId);
+    const parsedBacklogId = parseInt(backlogId);
+    const parsedSprintId = parseInt(sprintId);
+    const parsedAssignedTo = parseInt(assignedTo);
+
+    if (isNaN(parsedProjectId) || isNaN(parsedBacklogId) || isNaN(parsedSprintId) || isNaN(parsedAssignedTo)) {
+        return res.status(400).json({ error: "Les ID de projet, backlog, sprint ou assignedTo ne sont pas valides." });
+    }
+
+    try {
         const existingTask = await prisma.task.findUnique({ where: { id: parseInt(id) } });
         if (!existingTask) {
             return res.status(404).json({ error: "Tâche non trouvée." });
         }
 
+        const [project, backlog, sprint, employee] = await Promise.all([
+            getProjectById(parsedProjectId),
+            getBacklogById(parsedBacklogId),
+            getSprintById(parsedSprintId),
+            getEmployeeById(parsedAssignedTo)
+        ]);
+
+        if (!project || !backlog || !sprint || (assignedTo && !employee)) {
+            return res.status(404).json({ error: "Projet, backlog, sprint ou employé non trouvé." });
+        }
+
         const updatedTask = await prisma.task.update({
             where: { id: parseInt(id) },
-            data: { title, description, status, priority, assignedTo, sprintId, projectId, backlogId, parentId }
+            data: {
+                title,
+                description,
+                status,
+                priority,
+                assignedTo: assignedTo ? parsedAssignedTo : null,
+                sprintId: parsedSprintId,
+                projectId: parsedProjectId,
+                backlogId: parsedBacklogId,
+                parentId: parentId || null
+            }
         });
 
         return res.status(200).json(updatedTask);
@@ -195,7 +229,6 @@ const updateTaskStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    // Vérifier si le statut est valide
     if (!["TODO", "IN_PROGRESS", "DONE"].includes(status)) {
         return res.status(400).json({ error: "Statut invalide" });
     }
@@ -247,6 +280,7 @@ const assignTasksToSprint = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur" });
     }
 };
+
 const assignTasksToBacklog = async (req, res) => {
     const { backlogId, taskIds } = req.body;
 
@@ -331,6 +365,7 @@ const getEpicWithUserStories = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur." });
     }
 };
+
 const getTasksGroupedByBacklog = async (req, res) => {
     try {
         const tasks = await prisma.task.findMany({
@@ -357,6 +392,45 @@ const getTasksGroupedByBacklog = async (req, res) => {
     }
 };
 
+const assignTaskToEmployee = async (req, res) => {
+    const { id } = req.params;
+    const { assignedTo } = req.body;
+
+    if (!assignedTo) {
+        return res.status(400).json({ error: "L'ID de l'employé est requis." });
+    }
+
+    const parsedAssignedTo = parseInt(assignedTo);
+    if (isNaN(parsedAssignedTo)) {
+        return res.status(400).json({ error: "ID de l'employé invalide." });
+    }
+
+    try {
+        const [task, employee] = await Promise.all([
+            prisma.task.findUnique({ where: { id: parseInt(id) } }),
+            getEmployeeById(parsedAssignedTo)
+        ]);
+
+        if (!task) {
+            return res.status(404).json({ error: "Tâche non trouvée." });
+        }
+
+        if (!employee) {
+            return res.status(404).json({ error: "Employé non trouvé." });
+        }
+
+        const updatedTask = await prisma.task.update({
+            where: { id: parseInt(id) },
+            data: { assignedTo: parsedAssignedTo }
+        });
+
+        res.status(200).json({ message: "Tâche assignée avec succès", task: updatedTask });
+    } catch (error) {
+        console.error("Erreur lors de l'assignation de la tâche:", error);
+        res.status(500).json({ error: "Erreur serveur lors de l'assignation de la tâche." });
+    }
+};
+
 module.exports = {
     createTask,
     getAllTasks,
@@ -374,6 +448,7 @@ module.exports = {
     getTasksByBacklogId,
     getEpicWithUserStories,
     getTasksGroupedByBacklog,
-    assignTasksToBacklog
+    assignTasksToBacklog,
+    assignTaskToEmployee
 
 };

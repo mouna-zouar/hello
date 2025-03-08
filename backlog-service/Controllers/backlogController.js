@@ -3,7 +3,6 @@ const { getProjectById } = require('../services/projectService');
 
 const prisma = new PrismaClient();
 
-// Créer un nouveau backlog
 const createBacklog = async (req, res) => {
     const { name, description, projectId } = req.body;
 
@@ -28,7 +27,6 @@ const createBacklog = async (req, res) => {
     }
 };
 
-// Récupérer tous les backlogs
 const getAllBacklogs = async (req, res) => {
     try {
         const backlogs = await prisma.backlog.findMany();
@@ -39,7 +37,6 @@ const getAllBacklogs = async (req, res) => {
     }
 };
 
-// Récupérer un backlog par ID
 const getBacklogById = async (req, res) => {
     const { id } = req.params;
 
@@ -59,7 +56,6 @@ const getBacklogById = async (req, res) => {
     }
 };
 
-// Mettre à jour un backlog
 const updateBacklog = async (req, res) => {
     const { id } = req.params;
     const { name, description, projectId } = req.body;
@@ -77,6 +73,11 @@ const updateBacklog = async (req, res) => {
             return res.status(404).json({ error: "Backlog non trouvé" });
         }
 
+        const project = await getProjectById(parseInt(projectId));
+        if (!project) {
+            return res.status(404).json({ error: "Projet non trouvé" });
+        }
+
         const updatedBacklog = await prisma.backlog.update({
             where: { id: parseInt(id) },
             data: { name, description, projectId: parseInt(projectId) },
@@ -88,8 +89,6 @@ const updateBacklog = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la mise à jour du backlog" });
     }
 };
-
-// Supprimer un backlog
 const deleteBacklog = async (req, res) => {
     const { id } = req.params;
 

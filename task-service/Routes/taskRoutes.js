@@ -17,7 +17,8 @@ const {
     getTasksByBacklogId,
     getEpicWithUserStories,
     getTasksGroupedByBacklog,
-    assignTasksToBacklog
+    assignTasksToBacklog,
+    assignTaskToEmployee
 
 } = require('../Controllers/taskController');
 
@@ -31,6 +32,8 @@ router.get('/project/:projectId', getTasksByProjectId);
 router.get('/sprint/:sprintId', getTasksBySprintId);
 router.get('/backlog/:backlogId', getTasksByBacklogId);
 router.get('/assignedTo/:assignedTo', getTasksByAssignedTo);
+router.put('/tasks/:id/employee', assignTaskToEmployee);
+
 
 
 router.get('/project/:projectId/tasks', getProjectWithTasks);

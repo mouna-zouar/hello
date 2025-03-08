@@ -84,9 +84,35 @@ const getSprintMeetingById = async (req, res) => {
 
 const updateSprintMeeting = async (req, res) => {
     const { id } = req.params;
-    const { meetingDate, agenda, participants } = req.body;
+    const { meetingDate, agenda, participants, taskId, projectId, sprintId, onlineMeetingLink, status } = req.body;
+
+    const parsedProjectId = projectId ? parseInt(projectId) : null;
+    const parsedTaskId = taskId ? parseInt(taskId) : null;
+    const parsedSprintId = sprintId ? parseInt(sprintId) : null;
+
+    if (parsedProjectId && isNaN(parsedProjectId)) {
+        return res.status(400).json({ error: "L'ID de projet n'est pas valide." });
+    }
+
+    if (parsedTaskId && isNaN(parsedTaskId)) {
+        return res.status(400).json({ error: "L'ID de tâche n'est pas valide." });
+    }
+
+    if (parsedSprintId && isNaN(parsedSprintId)) {
+        return res.status(400).json({ error: "L'ID de sprint n'est pas valide." });
+    }
 
     try {
+        const [project, task, sprint] = await Promise.all([
+            parsedProjectId ? getProjectById(parsedProjectId) : null,
+            parsedTaskId ? getTaskById(parsedTaskId) : null,
+            parsedSprintId ? getSprintById(parsedSprintId) : null
+        ]);
+
+        if ((parsedProjectId && !project) || (parsedTaskId && !task) || (parsedSprintId && !sprint)) {
+            return res.status(404).json({ error: "Projet, tâche ou sprint non trouvé." });
+        }
+
         const meeting = await prisma.sprintMeeting.findUnique({ where: { id: parseInt(id) } });
 
         if (!meeting) {
@@ -99,6 +125,11 @@ const updateSprintMeeting = async (req, res) => {
                 meetingDate: meetingDate || meeting.meetingDate,
                 agenda: agenda || meeting.agenda,
                 participants: participants || meeting.participants,
+                taskId: parsedTaskId || meeting.taskId,
+                projectId: parsedProjectId || meeting.projectId,
+                sprintId: parsedSprintId || meeting.sprintId,
+                onlineMeetingLink: onlineMeetingLink || meeting.onlineMeetingLink,
+                status: status || meeting.status,
             },
         });
 

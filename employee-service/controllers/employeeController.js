@@ -61,12 +61,24 @@ const getEmployeeById = async (req, res) => {
 
 const updateEmployee = async (req, res) => {
     const { id } = req.params;
-    const { firstName, lastName, email, salary,userId ,teamId } = req.body;
+    const { firstName, lastName, email, salary, userId, teamId } = req.body;
 
+    if (userId) {
+        const user = await getUserById(userId);
+        if (!user) {
+            return res.status(404).json({ error: "Utilisateur non trouvé dans le microservice Auth" });
+        }
+    }
+    if (teamId) {
+        const team = await getTeamById(teamId);
+        if (!team) {
+            return res.status(404).json({ error: "L'équipe référencée n'existe pas" });
+        }
+    }
     try {
         const updatedEmployee = await prisma.employee.update({
             where: { id: parseInt(id) },
-            data: { firstName, lastName, email, salary,userId,teamId },
+            data: { firstName, lastName, email, salary, userId, teamId },
         });
 
         res.status(200).json({ message: "Employé mis à jour avec succès", employee: updatedEmployee });
@@ -80,7 +92,6 @@ const updateEmployee = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur" });
     }
 };
-
 const deleteEmployee = async (req, res) => {
     const { id } = req.params;
 
