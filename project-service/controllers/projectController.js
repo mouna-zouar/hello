@@ -80,6 +80,50 @@ const updateProject = async (req, res) => {
     }
 };
 
+const assignProjectToTeam = async (req, res) => {
+    const { projectId, teamId } = req.params;
+
+    if (!projectId || !teamId) {
+        return res.status(400).json({ error: "Les IDs du projet et de l'équipe sont nécessaires" });
+    }
+
+    const projectIdParsed = parseInt(projectId, 10);
+    const teamIdParsed = parseInt(teamId, 10);
+
+    if (isNaN(projectIdParsed) || isNaN(teamIdParsed)) {
+        return res.status(400).json({ error: "Les IDs doivent être des nombres valides" });
+    }
+
+    try {
+        const team = await getTeamById(teamIdParsed);
+        if (!team) {
+            return res.status(404).json({ error: "Équipe non trouvée" });
+        }
+
+        const project = await prisma.project.findUnique({
+            where: { id: projectIdParsed },
+        });
+
+        if (!project) {
+            return res.status(404).json({ error: "Projet non trouvé" });
+        }
+
+        const updatedProject = await prisma.project.update({
+            where: { id: projectIdParsed },
+            data: { teamId: teamIdParsed },
+        });
+
+        res.status(200).json({
+            message: `Le projet ${project.name} a été assigné à l'équipe ${team.name} avec succès`,
+            project: updatedProject,
+        });
+    } catch (error) {
+        console.error('Erreur lors de l\'assignation du projet à l\'équipe:', error);
+        res.status(500).json({ message: "Erreur serveur lors de l'assignation du projet à l'équipe" });
+    }
+};
+
+
 const deleteProject = async (req, res) => {
     const { id } = req.params;
 
@@ -108,4 +152,5 @@ module.exports = {
     getProjectById,
     updateProject,
     deleteProject,
+    assignProjectToTeam
 };
