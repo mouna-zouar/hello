@@ -89,6 +89,7 @@ const updateBacklog = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la mise à jour du backlog" });
     }
 };
+
 const deleteBacklog = async (req, res) => {
     const { id } = req.params;
 

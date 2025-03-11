@@ -92,6 +92,7 @@ const updateEmployee = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur" });
     }
 };
+
 const deleteEmployee = async (req, res) => {
     const { id } = req.params;
 
@@ -108,6 +109,7 @@ const deleteEmployee = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur" });
     }
 };
+
 const getEmployeesByTeamId = async (req, res) => {
     const { teamId } = req.query;
 
@@ -124,6 +126,7 @@ const getEmployeesByTeamId = async (req, res) => {
         res.status(500).json({ error: 'Erreur serveur lors de la récupération des employés' });
     }
 };
+
 const assignEmployeeToTeam = async (employeeId, teamId) => {
     try {
         const team = await getTeamById(teamId);
@@ -143,6 +146,7 @@ const assignEmployeeToTeam = async (employeeId, teamId) => {
         throw error;
     }
 };
+
 module.exports = {
     createEmployee,
     getAllEmployees,

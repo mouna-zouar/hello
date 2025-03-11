@@ -17,6 +17,7 @@ const createDepartment = async (req, res) => {
 };
 
 const getAllDepartments = async (req, res) => {
+
     try {
         const departments = await prisma.department.findMany();
         res.json(departments);

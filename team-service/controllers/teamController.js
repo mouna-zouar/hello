@@ -44,7 +44,6 @@ const searchTeamByName = async (req, res) => {
     }
 };
 
-
 const createTeam = async (req, res) => {
     const { name } = req.body;
 

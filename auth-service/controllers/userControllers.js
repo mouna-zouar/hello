@@ -138,35 +138,6 @@ const getUserById = async (req, res) => {
     }
 };
 
-const searchUserByFirstName = async (req, res) => {
-    try {
-        const { firstName } = req.query;
-
-        if (!firstName) {
-            return res.status(400).json({ error: "Le prénom est requis pour la recherche" });
-        }
-
-        const users = await prisma.user.findMany({
-            where: { firstName },
-            select: {
-                id: true,
-                username: true,
-                email: true,
-                firstName: true,
-                lastName: true
-            }
-        });
-
-        if (users.length === 0) {
-            return res.status(404).json({ error: "Aucun utilisateur trouvé" });
-        }
-
-        res.json(users);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erreur serveur" });
-    }
-};
 
 const deleteUser = async (req, res) => {
     try {
@@ -200,12 +171,51 @@ const getUserSessions = async (req, res) => {
     }
 };
 
+const verifyTokenAndPermissions = async (req, res) => {
+    const { token } = req.body;
+
+    if (!token) return res.status(401).json({ error: "Token manquant" });
+
+    try {
+        const decoded = jwt.verify(token.replace("Bearer ", ""), process.env.JWT_SECRET);
+
+        const user = await prisma.user.findUnique({
+            where: { id: decoded.id },
+            include: {
+                role: {
+                    include: {
+                        permissions: {
+                            include: { permission: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!user) return res.status(404).json({ error: "Utilisateur introuvable" });
+
+        const permissions = user.role.permissions.map(rp => ({
+            model: rp.permission.model,
+            operation: rp.permission.operation
+        }));
+
+        return res.json({
+            id: user.id,
+            role: user.role.role,
+            permissions
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(401).json({ error: "Token invalide" });
+    }
+};
+
 module.exports = {
     register,
     login,
     getAllUsers,
     getUserById,
-    searchUserByFirstName,
     deleteUser,
-    getUserSessions
+    getUserSessions,
+    verifyTokenAndPermissions
 };
