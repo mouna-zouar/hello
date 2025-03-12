@@ -1,28 +1,22 @@
 const express = require('express');
-const {
-    createEmployee,
-    getAllEmployees,
-    getEmployeeById,
-    updateEmployee,
-    deleteEmployee,
-    assignEmployeeToTeam,
-    getEmployeesByTeamId
-} = require('../controllers/employeeController');
+const employeeController = require("../controllers/employeeController");
+
 const authMiddleware = require('../middlewares/authMiddleware');
+const checkPermission = require('../middlewares/check');
 
 const router = express.Router();
 
-router.post('/', authMiddleware, createEmployee);
-router.get('/', getAllEmployees);
-router.get('/:id', getEmployeeById);
-router.put('/:id', updateEmployee);
-router.get('/team/employee', getEmployeesByTeamId);
-router.delete('/:id', deleteEmployee);
-router.put('/assign/:employeeId/:teamId', async (req, res) => {
+router.post('/',authMiddleware, checkPermission("Employee", "POST"), employeeController.createEmployee);
+router.get('/',authMiddleware, checkPermission("Employee", "VIEW"),  employeeController.getAllEmployees);
+router.get('/:id',authMiddleware, checkPermission("Employee", "VIEW"),  employeeController.getEmployeeById);
+router.put('/:id',authMiddleware, checkPermission("Employee", "UPDATE"), employeeController.updateEmployee);
+router.get('/team/employee',authMiddleware, checkPermission("Employee", "VIEW"),  employeeController.getEmployeesByTeamId);
+router.delete('/:id',authMiddleware, checkPermission("Employee", "DELETE"),  employeeController.deleteEmployee);
+router.put('/assign/:employeeId/:teamId',authMiddleware, checkPermission("Employee", "UPDATE"), async (req, res) => {
     const { employeeId, teamId } = req.params;
 
     try {
-        const updatedEmployee = await assignEmployeeToTeam(parseInt(employeeId), parseInt(teamId));
+        const updatedEmployee = await employeeController.assignEmployeeToTeam(parseInt(employeeId), parseInt(teamId));
         res.status(200).json({
             message: `Employé ${employeeId} assigné à l'équipe ${teamId} avec succès`,
             employee: updatedEmployee

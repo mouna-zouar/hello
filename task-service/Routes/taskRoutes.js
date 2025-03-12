@@ -1,52 +1,34 @@
 const express = require('express');
 const router = express.Router();
-const {
-    createTask,
-    getAllTasks,
-    getTaskById,
-    updateTask,
-    deleteTask,
-    getTasksByProjectId,
-    getProjectWithTasks,
-    prioritizeTasks,
-    updateTaskStatus,
-    getTasksBySprintId,
-    assignTasksToSprint,
-    unassignTasksFromSprint,
-    getTasksByAssignedTo,
-    getTasksByBacklogId,
-    getEpicWithUserStories,
-    getTasksGroupedByBacklog,
-    assignTasksToBacklog,
-    assignTaskToEmployee
+const taskController = require('../Controllers/taskController');
+const checkPermission = require("../middlewares/check");
+const authMiddleware = require("../middlewares/authMiddleware");
 
-} = require('../Controllers/taskController');
+router.post('/', authMiddleware, checkPermission("Task", "CREATE"),taskController.createTask);
+router.get('/', authMiddleware, checkPermission("Task", "VIEW"), taskController.getAllTasks);
+router.get('/:id',  authMiddleware, checkPermission("Task", "VIEW"),taskController.getTaskById);
+router.put('/:id',  authMiddleware, checkPermission("Task", "UPDATE"),taskController.updateTask);
+router.delete('/:id',  authMiddleware, checkPermission("Task", "DELETE"),taskController.deleteTask);
 
-router.post('/', createTask);
-router.get('/', getAllTasks);
-router.get('/:id', getTaskById);
-router.put('/:id', updateTask);
-router.delete('/:id', deleteTask);
-
-router.get('/project/:projectId', getTasksByProjectId);
-router.get('/sprint/:sprintId', getTasksBySprintId);
-router.get('/backlog/:backlogId', getTasksByBacklogId);
-router.get('/assignedTo/:assignedTo', getTasksByAssignedTo);
-router.put('/tasks/:id/employee', assignTaskToEmployee);
+router.get('/project/:projectId', authMiddleware, checkPermission("Task", "VIEW"),taskController.getTasksByProjectId);
+router.get('/sprint/:sprintId',  authMiddleware, checkPermission("Task", "VIEW"),taskController.getTasksBySprintId);
+router.get('/backlog/:backlogId', authMiddleware, checkPermission("Task", "VIEW"), taskController.getTasksByBacklogId);
+router.get('/assignedTo/:assignedTo', authMiddleware, checkPermission("Task", "VIEW"), taskController.getTasksByAssignedTo);
+router.put('/tasks/:id/employee',authMiddleware, checkPermission("Task", "UPDATE"), taskController.assignTaskToEmployee);
 
 
 
-router.get('/project/:projectId/tasks', getProjectWithTasks);
+router.get('/project/:projectId/tasks', authMiddleware, checkPermission("Task", "VIEW"), taskController.getProjectWithTasks);
 
-router.put('/prioritize', prioritizeTasks);
-router.put('/:id/status', updateTaskStatus);
-router.put('/assign/sprint', assignTasksToSprint);
-router.put('/assign/backlog', assignTasksToBacklog);
+router.put('/prioritize',authMiddleware, checkPermission("Task", "UPDATE"), taskController.prioritizeTasks);
+router.put('/:id/status', authMiddleware, checkPermission("Task", "UPDATE"),taskController.updateTaskStatus);
+router.put('/assign/sprint',authMiddleware, checkPermission("Task", "UPDATE"), taskController.assignTasksToSprint);
+router.put('/assign/backlog', authMiddleware, checkPermission("Task", "UPDATE"),taskController.assignTasksToBacklog);
 
 
-router.put('/unassign/:sprintId', unassignTasksFromSprint);
-router.get('/epic/:epicId/userstories', getEpicWithUserStories);
-router.get('/tasks/grouped', getTasksGroupedByBacklog);
+router.put('/unassign/:sprintId',authMiddleware, checkPermission("Task", "UPDATE"), taskController.unassignTasksFromSprint);
+router.get('/epic/:epicId/userstories', authMiddleware, checkPermission("Task", "VIEW"), taskController.getEpicWithUserStories);
+router.get('/tasks/grouped',  authMiddleware, checkPermission("Task", "VIEW"),taskController.getTasksGroupedByBacklog);
 
 
 module.exports = router;

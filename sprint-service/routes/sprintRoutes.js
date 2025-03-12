@@ -1,39 +1,26 @@
 const express = require('express');
-const {
-    createSprint,
-    getAllSprints,
-    getSprintById,
-    updateSprint,
-    deleteSprint,
-    getSprintsByProjectId,
-    getSprintWithTasks,
-    closeSprint,
-    getSprintsBybacklogId,
-    getProjectWithSprints,
-    getBacklogWithSprints,
-    openSprint
-
-} = require('../controllers/sprintController');
-
+const sprintController = require('../controllers/sprintController');
+const checkPermission = require("../middlewares/check");
+const authMiddleware = require("../middlewares/authMiddleware");
 const router = express.Router();
 
-router.post('/', createSprint);
+router.post('/',authMiddleware, checkPermission("Sprint", "CREATE"),sprintController.createSprint);
 
-router.get('/', getAllSprints);
+router.get('/',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getAllSprints);
 
-router.get('/:id', getSprintById);
+router.get('/:id',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getSprintById);
 
-router.put('/:id', updateSprint);
+router.put('/:id', authMiddleware, checkPermission("Sprint", "UPDATE"),sprintController.updateSprint);
 
-router.delete('/:id', deleteSprint);
-router.get('/sprints/:id', getSprintWithTasks);
-router.get('/project/:projectId/sprints', getProjectWithSprints);
-router.get('/backlog/:backlogId/sprints', getBacklogWithSprints);
-router.put('/:id/close', closeSprint);
-router.patch('/:id/open', openSprint);
+router.delete('/:id',authMiddleware, checkPermission("Sprint", "DELETE"), sprintController.deleteSprint);
+router.get('/sprints/:id',authMiddleware, checkPermission("Sprint", "VIEW"),sprintController.getSprintWithTasks);
+router.get('/project/:projectId/sprints',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getProjectWithSprints);
+router.get('/backlog/:backlogId/sprints',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getBacklogWithSprints);
+router.put('/:id/close', authMiddleware, checkPermission("Sprint", "UPDATE"),sprintController.closeSprint);
+router.patch('/:id/open', authMiddleware, checkPermission("Sprint", "UPDATE"),sprintController.openSprint);
 
-router.get('/project/:projectId', getSprintsByProjectId);
-router.get('/backlog/:backlogId', getSprintsBybacklogId);
+router.get('/project/:projectId',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getSprintsByProjectId);
+router.get('/backlog/:backlogId',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getSprintsBybacklogId);
 
 
 

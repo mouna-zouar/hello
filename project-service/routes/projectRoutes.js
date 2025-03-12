@@ -1,16 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const projectController = require('../controllers/projectController');
+const checkPermission = require("../middlewares/check");
+const authMiddleware = require("../middlewares/authMiddleware");
 
-router.post('/', projectController.createProject);
+router.post('/',authMiddleware, checkPermission("Project", "POST"),  projectController.createProject);
 
-router.get('/', projectController.getAllProjects);
+router.get('/',authMiddleware, checkPermission("Project", "VIEW"), projectController.getAllProjects);
 
-router.put('/:id', projectController.updateProject);
-router.get('/:id', projectController.getProjectById);
+router.put('/:id',authMiddleware, checkPermission("Project", "UPDATE"), projectController.updateProject);
+router.get('/:id',authMiddleware, checkPermission("Project", "VIEW"), projectController.getProjectById);
 
-router.put('/projects/:projectId/assign/:teamId', projectController.assignProjectToTeam);
+router.put('/projects/:projectId/assign/:teamId',authMiddleware, checkPermission("Project", "UPDATE"), projectController.assignProjectToTeam);
 
-router.delete('/:id', projectController.deleteProject);
+router.delete('/:id',authMiddleware, checkPermission("Project", "DELETE"), projectController.deleteProject);
 
 module.exports = router;
