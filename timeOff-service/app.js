@@ -10,5 +10,5 @@ app.use(bodyParser.json());
 app.use('/api/timeoffs', timeOffRoutes);
 
 app.listen(port, () => {
-    console.log(`Team service running on port ${port}`);
+    console.log(`Timeoff service running on port ${port}`);
 });

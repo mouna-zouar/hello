@@ -4,7 +4,7 @@ const taskController = require('../Controllers/taskController');
 const checkPermission = require("../middlewares/check");
 const authMiddleware = require("../middlewares/authMiddleware");
 
-router.post('/', authMiddleware, checkPermission("Task", "CREATE"),taskController.createTask);
+router.post('/', taskController.createTask);
 router.get('/', authMiddleware, checkPermission("Task", "VIEW"), taskController.getAllTasks);
 router.get('/:id',  authMiddleware, checkPermission("Task", "VIEW"),taskController.getTaskById);
 router.put('/:id',  authMiddleware, checkPermission("Task", "UPDATE"),taskController.updateTask);

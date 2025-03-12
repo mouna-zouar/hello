@@ -1,9 +1,9 @@
-import { PrismaClient, TimeOffStatus, TimeOffType } from '@prisma/client';
-import { getEmployeeById } from '../services/employeeService';
+const { PrismaClient, TimeOffStatus, TimeOffType } =require ('@prisma/client');
+const { getEmployeeById } =require ('../services/employeeservice');
 
 const prisma = new PrismaClient();
 
-export const createTimeOff = async (req, res) => {
+ const createTimeOff = async (req, res) => {
     const { employeeId, startDate, endDate, timeOffType } = req.body;
 
     try {
@@ -33,7 +33,7 @@ export const createTimeOff = async (req, res) => {
     }
 };
 
-export const getAllTimeOffs = async (req, res) => {
+ const getAllTimeOffs = async (req, res) => {
     try {
         const timeOffs = await prisma.timeOff.findMany();
         res.json(timeOffs);
@@ -43,7 +43,7 @@ export const getAllTimeOffs = async (req, res) => {
     }
 };
 
-export const getTimeOffById = async (req, res) => {
+ const getTimeOffById = async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -62,7 +62,7 @@ export const getTimeOffById = async (req, res) => {
     }
 };
 
-export const updateTimeOff = async (req, res) => {
+ const updateTimeOff = async (req, res) => {
     const { id } = req.params;
     const { employeeId, startDate, endDate, timeOffType, status } = req.body;
 
@@ -101,7 +101,7 @@ export const updateTimeOff = async (req, res) => {
     }
 };
 
-export const deleteTimeOff = async (req, res) => {
+ const deleteTimeOff = async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -116,7 +116,7 @@ export const deleteTimeOff = async (req, res) => {
     }
 };
 
-export const getRemainingTimeOff = async (req, res) => {
+ const getRemainingTimeOff = async (req, res) => {
     const { id } = req.params;
 
     try {

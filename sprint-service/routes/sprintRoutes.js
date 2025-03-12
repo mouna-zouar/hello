@@ -8,7 +8,7 @@ router.post('/',authMiddleware, checkPermission("Sprint", "CREATE"),sprintContro
 
 router.get('/',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getAllSprints);
 
-router.get('/:id',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getSprintById);
+router.get('/:id', sprintController.getSprintById);
 
 router.put('/:id', authMiddleware, checkPermission("Sprint", "UPDATE"),sprintController.updateSprint);
 

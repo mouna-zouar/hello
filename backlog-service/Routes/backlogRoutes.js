@@ -6,7 +6,7 @@ const checkPermission = require("../middlewares/check");
 
 router.post('/',authMiddleware, checkPermission("Backlog", "POST"),backlogController.createBacklog);
 router.get('/', authMiddleware, checkPermission("Backlog", "VIEW"),backlogController.getAllBacklogs);
-router.get('/:id', authMiddleware, checkPermission("Backlog", "VIEW"),backlogController.getBacklogById);
+router.get('/:id',backlogController.getBacklogById);
 router.put('/:id', authMiddleware, checkPermission("Backlog", "UPDATE"),backlogController.updateBacklog);
 router.delete('/:id', authMiddleware, checkPermission("Backlog", "DELETE"),backlogController.deleteBacklog);
 
