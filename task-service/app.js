@@ -1,12 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const taskRoutes = require('./Routes/taskRoutes');
-
+const dependencyRoutes = require('./Routes/dependencyRoutes');
 const app = express();
 const port = 3006;
 
 app.use(bodyParser.json());
-
+app.use('/api',dependencyRoutes);
 app.use('/api/tasks', taskRoutes);
 
 app.listen(port, () => {
