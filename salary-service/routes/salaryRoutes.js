@@ -1,0 +1,13 @@
+const express = require('express');
+const router = express.Router();
+const salaryController = require('../controllers/salaryController');
+
+router.get('/:employeeId', salaryController.getSalary);
+
+router.post('/base', salaryController.createBaseSalary);
+
+router.put('/base/:employeeId', salaryController.updateBaseSalary);
+
+router.post('/calculateTotal', salaryController.calculateTotalSalary);
+
+module.exports = router;

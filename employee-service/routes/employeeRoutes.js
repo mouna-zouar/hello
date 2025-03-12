@@ -6,9 +6,9 @@ const checkPermission = require('../middlewares/check');
 
 const router = express.Router();
 
-router.post('/',authMiddleware, checkPermission("Employee", "POST"), employeeController.createEmployee);
+router.post('/',employeeController.createEmployee);
 router.get('/',authMiddleware, checkPermission("Employee", "VIEW"),  employeeController.getAllEmployees);
-router.get('/:id',authMiddleware, checkPermission("Employee", "VIEW"),  employeeController.getEmployeeById);
+router.get('/:id', employeeController.getEmployeeById);
 router.put('/:id',authMiddleware, checkPermission("Employee", "UPDATE"), employeeController.updateEmployee);
 router.get('/team/employee',authMiddleware, checkPermission("Employee", "VIEW"),  employeeController.getEmployeesByTeamId);
 router.delete('/:id',authMiddleware, checkPermission("Employee", "DELETE"),  employeeController.deleteEmployee);

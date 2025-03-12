@@ -4,7 +4,7 @@ const { getTeamById } = require('../services/equipeService');
 const prisma = new PrismaClient();
 
 const createEmployee = async (req, res) => {
-    const { firstName, lastName, email, salary, userId } = req.body;
+    const { firstName, lastName, email, userId,teamId } = req.body;
 
     if (!userId || isNaN(userId)) {
         return res.status(400).json({ error: "userId invalide" });
@@ -15,12 +15,18 @@ const createEmployee = async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: "Utilisateur non trouvé dans Auth Service" });
         }
+        if (teamId) {
+            const team = await getTeamById(teamId);
+            if (!team) {
+                return res.status(404).json({ error: "L'équipe référencée n'existe pas" });
+            }
+        }
 
         const newEmployee = await prisma.employee.create({
-            data: { firstName, lastName, email, salary, userId },
+            data: { firstName, lastName, email, userId,teamId },
         });
 
-        res.status(201).json({ message: "Employé créé avec succès", employee: newEmployee });
+        res.status(201).json({ message: "Employé créé vec succès", employee: newEmployee });
     } catch (error) {
         console.error(" Erreur lors de la création de l'employé:", error);
 
@@ -61,7 +67,7 @@ const getEmployeeById = async (req, res) => {
 
 const updateEmployee = async (req, res) => {
     const { id } = req.params;
-    const { firstName, lastName, email, salary, userId, teamId } = req.body;
+    const { firstName, lastName, email, userId, teamId } = req.body;
 
     if (userId) {
         const user = await getUserById(userId);
@@ -78,7 +84,7 @@ const updateEmployee = async (req, res) => {
     try {
         const updatedEmployee = await prisma.employee.update({
             where: { id: parseInt(id) },
-            data: { firstName, lastName, email, salary, userId, teamId },
+            data: { firstName, lastName, email, userId, teamId },
         });
 
         res.status(200).json({ message: "Employé mis à jour avec succès", employee: updatedEmployee });

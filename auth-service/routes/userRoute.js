@@ -27,7 +27,7 @@ router.get("/", authMiddleware,checkPermission("User", "VIEW"), async (req, res)
         res.status(500).json({ error: "Erreur lors de la récupération des utilisateurs" });
     }
 });
-router.get("/:id", authMiddleware,checkPermission("User", "VIEW"), userController.getUserById);
+router.get("/:id", userController.getUserById);
 router.delete("/:id", authMiddleware,checkPermission("User", "DELETE"), userController.deleteUser);
 router.post("/verify", userController.verifyTokenAndPermissions);
 

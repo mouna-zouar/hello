@@ -13,7 +13,7 @@ router.delete('/:id',  authMiddleware, checkPermission("Task", "DELETE"),taskCon
 router.get('/project/:projectId', authMiddleware, checkPermission("Task", "VIEW"),taskController.getTasksByProjectId);
 router.get('/sprint/:sprintId',  authMiddleware, checkPermission("Task", "VIEW"),taskController.getTasksBySprintId);
 router.get('/backlog/:backlogId', authMiddleware, checkPermission("Task", "VIEW"), taskController.getTasksByBacklogId);
-router.get('/assignedTo/:assignedTo', authMiddleware, checkPermission("Task", "VIEW"), taskController.getTasksByAssignedTo);
+router.get('/assignedTo/:assignedTo', taskController.getTasksByAssignedTo);
 router.put('/tasks/:id/employee',authMiddleware, checkPermission("Task", "UPDATE"), taskController.assignTaskToEmployee);
 
 
