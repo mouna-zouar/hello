@@ -7,6 +7,7 @@ const checkPermission = require('../middlewares/check');
 const router = express.Router();
 
 router.post('/',employeeController.createEmployee);
+router.get('/:id/user', employeeController.getEmployeeWithUser);
 router.get('/',authMiddleware, checkPermission("Employee", "VIEW"),  employeeController.getAllEmployees);
 router.get('/:id', employeeController.getEmployeeById);
 router.put('/:id',authMiddleware, checkPermission("Employee", "UPDATE"), employeeController.updateEmployee);

@@ -3,18 +3,35 @@ const { getUserById } = require('../services/userService');
 const { getTeamById } = require('../services/equipeService');
 const prisma = new PrismaClient();
 
-const createEmployee = async (req, res) => {
-    const { firstName, lastName, email, userId,teamId } = req.body;
-
-    if (!userId || isNaN(userId)) {
-        return res.status(400).json({ error: "userId invalide" });
-    }
-
+const getEmployeeWithUser = async (req, res) => {
     try {
+        const { id } = req.params;
+
+        const employee = await prisma.employee.findUnique({ where: { id: parseInt(id) } });
+        if (!employee) return res.status(404).json({ error: "Employé non trouvé" });
+
+        const user = await getUserById(employee.id);
+        if (!user) return res.status(404).json({ error: "Utilisateur non trouvé dans le service Auth" });
+
+        res.json({
+            ...employee,
+            user,
+        });
+    } catch (error) {
+        console.error("Erreur lors de la récupération des informations de l'employé avec l'utilisateur:", error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération des informations de l'employé" });
+    }
+};
+
+const createEmployee = async (req, res) => {
+    try {
+        const { userId, position, hireDate, teamId } = req.body;
+
         const user = await getUserById(userId);
         if (!user) {
             return res.status(404).json({ error: "Utilisateur non trouvé dans Auth Service" });
         }
+
         if (teamId) {
             const team = await getTeamById(teamId);
             if (!team) {
@@ -23,18 +40,18 @@ const createEmployee = async (req, res) => {
         }
 
         const newEmployee = await prisma.employee.create({
-            data: { firstName, lastName, email, userId,teamId },
+            data: {
+                id: userId,
+                position,
+                hireDate,
+                teamId,
+            },
         });
 
-        res.status(201).json({ message: "Employé créé vec succès", employee: newEmployee });
+        res.status(201).json({ message: "Employé créé avec succès", employee: newEmployee });
     } catch (error) {
-        console.error(" Erreur lors de la création de l'employé:", error);
-
-        if (error.code === 'P2003') {
-            return res.status(400).json({ error: "Violation de la contrainte de clé étrangère sur userId" });
-        }
-
-        res.status(500).json({ error: "Erreur serveur lors de la création de l'employé" });
+        console.error("Erreur lors de la création de l'employé:", error);
+        res.status(500).json({ error: "Erreur serveur" });
     }
 };
 
@@ -67,24 +84,31 @@ const getEmployeeById = async (req, res) => {
 
 const updateEmployee = async (req, res) => {
     const { id } = req.params;
-    const { firstName, lastName, email, userId, teamId } = req.body;
+    const { userId, position, hireDate, teamId } = req.body;
 
-    if (userId) {
-        const user = await getUserById(userId);
-        if (!user) {
-            return res.status(404).json({ error: "Utilisateur non trouvé dans le microservice Auth" });
-        }
-    }
-    if (teamId) {
-        const team = await getTeamById(teamId);
-        if (!team) {
-            return res.status(404).json({ error: "L'équipe référencée n'existe pas" });
-        }
-    }
     try {
+        if (userId) {
+            const user = await getUserById(userId);
+            if (!user) {
+                return res.status(404).json({ error: "Utilisateur non trouvé dans le microservice Auth" });
+            }
+        }
+
+        if (teamId) {
+            const team = await getTeamById(teamId);
+            if (!team) {
+                return res.status(404).json({ error: "L'équipe référencée n'existe pas" });
+            }
+        }
+
         const updatedEmployee = await prisma.employee.update({
             where: { id: parseInt(id) },
-            data: { firstName, lastName, email, userId, teamId },
+            data: {
+                position,
+                hireDate,
+                userId,
+                teamId,
+            },
         });
 
         res.status(200).json({ message: "Employé mis à jour avec succès", employee: updatedEmployee });
@@ -160,5 +184,6 @@ module.exports = {
     updateEmployee,
     deleteEmployee,
     assignEmployeeToTeam,
-    getEmployeesByTeamId
+    getEmployeesByTeamId,
+    getEmployeeWithUser
 };

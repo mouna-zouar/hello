@@ -9,12 +9,10 @@ datasource db {
 
 model Employee {
   id         Int      @id @default(autoincrement())
-  firstName  String
-  lastName   String
-  email      String   @unique
+  position     String
+  hireDate     DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  userId     Int?
   teamId     Int?
 }
 
