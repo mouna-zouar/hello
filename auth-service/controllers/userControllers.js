@@ -1,11 +1,32 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const produceEvent = require("../kafka/kafkaProducer");
 const { registerSchema, loginSchema } = require("../validators/userValidator");
 require("dotenv").config();
 
 const prisma = new PrismaClient();
 
+/*const register = async (req, res) => {
+    try {
+        const validatedData = registerSchema.parse(req.body);
+
+        const existingUser = await prisma.user.findUnique({ where: { email: validatedData.email } });
+        if (existingUser) {
+            return res.status(400).json({ error: "Cet email est déjà utilisé" });
+        }
+
+        validatedData.password = await bcrypt.hash(validatedData.password, 10);
+        const user = await prisma.user.create({
+            data: validatedData
+        });
+
+        res.status(201).json({ message: "Utilisateur créé avec succès", user });
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({ error: error.message || "Erreur lors de l'inscription" });
+    }
+};*/
 const register = async (req, res) => {
     try {
         const validatedData = registerSchema.parse(req.body);
@@ -19,6 +40,22 @@ const register = async (req, res) => {
         const user = await prisma.user.create({
             data: validatedData
         });
+
+        // Produire un événement Kafka et vérifier si cela a réussi
+        try {
+            await produceEvent('user-created', {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                roleId: user.roleId,
+            });
+            console.log('Événement Kafka produit avec succès');
+        } catch (error) {
+            console.error('Erreur lors de l\'envoi de l\'événement Kafka:', error);
+            return res.status(500).json({ error: 'Erreur interne de production d\'événement' });
+        }
 
         res.status(201).json({ message: "Utilisateur créé avec succès", user });
     } catch (error) {
