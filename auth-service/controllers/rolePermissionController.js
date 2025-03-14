@@ -1,5 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const produceEvent = require('../kafka/kafkaProducer');
+const EVENTS = require('../constants/events');
 
 const addPermissionToRole = async (req, res) => {
     const { roleId, permissionId } = req.body;
@@ -18,12 +20,18 @@ const addPermissionToRole = async (req, res) => {
             data: { roleId, permissionId }
         });
 
+        await produceEvent(EVENTS.ROLE_PERMISSION_ADDED, {
+            roleId,
+            permissionId,
+        });
+
         res.status(201).json(rolePermission);
     } catch (error) {
         console.error('Erreur lors de l\'ajout de la permission au rôle :', error);
         res.status(500).json({ error: 'Erreur serveur lors de l\'ajout de la permission au rôle' });
     }
 };
+
 
 const removePermissionFromRole = async (req, res) => {
     const { roleId, permissionId } = req.params;
@@ -42,6 +50,11 @@ const removePermissionFromRole = async (req, res) => {
             where: {
                 roleId_permissionId: { roleId: parseInt(roleId), permissionId: parseInt(permissionId) }
             }
+        });
+
+        await produceEvent(EVENTS.ROLE_PERMISSION_REMOVED, {
+            roleId: parseInt(roleId),
+            permissionId: parseInt(permissionId),
         });
 
         res.status(200).json({ message: 'Permission retirée du rôle avec succès' });

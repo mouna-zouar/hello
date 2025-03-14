@@ -2,7 +2,8 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-
+const produceEvent = require('../kafka/kafkaProducer');
+const EVENTS = require('../constants/events');
 const inviteUser = async (req, res) => {
     try {
         const { email } = req.body;
@@ -46,6 +47,8 @@ const inviteUser = async (req, res) => {
                 return res.status(500).json({ error: 'Erreur lors de l\'envoi de l\'email' });
             }
             console.log("Invitation email sent: ", info);
+            produceEvent(EVENTS.USER_INVITATION_SENT, { email, invitationId: invitation.id, userId });
+
             res.status(200).json({ message: 'Invitation envoyée avec succès' });
         });
     } catch (error) {
@@ -64,6 +67,8 @@ const validateInviteToken = async (req, res) => {
         if (invitation.expiresAt < new Date()) {
             return res.status(400).json({ error: "Le lien d'invitation a expiré" });
         }
+        produceEvent(EVENTS.USER_INVITATION_VALIDATED, { token, invitationId: invitation.id });
+
         res.status(200).json({ message: "Invitation valide", invitation });
     } catch (error) {
         console.error(error);
@@ -88,6 +93,9 @@ const acceptInvitation = async (req, res) => {
             }
         });
         await prisma.invitation.delete({ where: { token } });
+
+        produceEvent(EVENTS.USER_INVITATION_ACCEPTED, { userId: newUser.id, invitationId: invitation.id });
+
         res.status(201).json({ message: "Utilisateur créé avec succès", user: newUser });
     } catch (error) {
         console.error(error);

@@ -1,4 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
+const produceEvent = require('../kafka/kafkaProducer');
+const EVENTS = require('../constants/events');
 const prisma = new PrismaClient();
 
 const createDepartment = async (req, res) => {
@@ -8,7 +10,7 @@ const createDepartment = async (req, res) => {
         const newDepartment = await prisma.department.create({
             data: { name },
         });
-
+        await produceEvent(EVENTS.DEPARTMENT_CREATED, newDepartment);
         res.status(201).json({ message: 'Département créé avec succès', department: newDepartment });
     } catch (error) {
         console.error(error);
@@ -37,6 +39,8 @@ const updateDepartment = async (req, res) => {
             data: { name },
         });
 
+        await produceEvent(EVENTS.DEPARTMENT_UPDATED, department);
+
         res.status(200).json({ message: 'Département mis à jour avec succès', department });
     } catch (error) {
         console.error(error);
@@ -51,6 +55,8 @@ const deleteDepartment = async (req, res) => {
         await prisma.department.delete({
             where: { id: parseInt(id) },
         });
+        await produceEvent(EVENTS.DEPARTMENT_DELETED, { id });
+
 
         res.status(200).json({ message: 'Département supprimé avec succès' });
     } catch (error) {

@@ -1,5 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const produceEvent = require('../kafka/kafkaProducer');
+const EVENTS = require('../constants/events');
 
 const createPermission = async (req, res) => {
     try {
@@ -7,6 +9,8 @@ const createPermission = async (req, res) => {
         const newPermission = await prisma.permission.create({
             data: { model, operation }
         });
+
+        await produceEvent(EVENTS.PERMISSION_CREATED, newPermission);
 
         res.status(201).json({ message: 'Permission créée avec succès', permission: newPermission });
     } catch (error) {
@@ -35,6 +39,9 @@ const updatePermission = async (req, res) => {
             data: { model, operation }
         });
 
+        await produceEvent(EVENTS.PERMISSION_UPDATED, permission);
+
+
         res.status(200).json({ message: 'Permission mise à jour avec succès', permission });
     } catch (error) {
         console.error(error);
@@ -49,6 +56,8 @@ const deletePermission = async (req, res) => {
         await prisma.permission.delete({
             where: { id: parseInt(id) },
         });
+
+        await produceEvent(EVENTS.PERMISSION_DELETED, permissionToDelete);
 
         res.status(200).json({ message: 'Permission supprimée avec succès' });
     } catch (error) {

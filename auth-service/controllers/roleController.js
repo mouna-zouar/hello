@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-
+const produceEvent = require('../kafka/kafkaProducer');
+const EVENTS = require('../constants/events');
 exports.getAllRoles = async (req, res) => {
     try {
         const roles = await prisma.role.findMany({
@@ -18,6 +19,7 @@ exports.createRole = async (req, res) => {
         const newRole = await prisma.role.create({
             data: { role, departmentId }
         });
+        await produceEvent(EVENTS.ROLE_CREATED, newRole);
         res.status(201).json(newRole);
     } catch (error) {
         res.status(500).json({ error: "Erreur lors de la création du rôle" });
@@ -32,6 +34,9 @@ exports.updateRole = async (req, res) => {
             where: { id: parseInt(id) },
             data: { role, departmentId }
         });
+
+        await produceEvent(EVENTS.ROLE_UPDATED, updatedRole);
+
         res.json(updatedRole);
     } catch (error) {
         res.status(500).json({ error: "Erreur lors de la mise à jour du rôle" });
@@ -42,6 +47,9 @@ exports.deleteRole = async (req, res) => {
     const { id } = req.params;
     try {
         await prisma.role.delete({ where: { id: parseInt(id) } });
+        await produceEvent(EVENTS.ROLE_DELETED, { id });
+
+
         res.json({ message: "Rôle supprimé avec succès" });
     } catch (error) {
         res.status(500).json({ error: "Erreur lors de la suppression du rôle" });
