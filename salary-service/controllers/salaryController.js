@@ -114,10 +114,33 @@ const updateBaseSalary = async (req, res) => {
         res.status(500).json({ error: "Erreur lors de la mise à jour du salaire de base" });
     }
 };
+const getEmployeeWithSalary = async (req, res) => {
+    const { employeeId } = req.params;
+
+    try {
+        const employee = await getEmployeeById(employeeId);
+        if (!employee) return res.status(404).json({ error: "Employé non trouvé" });
+
+        const salary = await prisma.salary.findUnique({
+            where: { employeeId: Number(employeeId) },
+        });
+
+        if (!salary) return res.status(404).json({ error: "Salaire non trouvé pour cet employé" });
+
+        res.status(200).json({
+            employee,
+            salary
+        });
+    } catch (error) {
+        console.error("Erreur getEmployeeWithSalary :", error.message);
+        res.status(500).json({ error: "Erreur lors de la récupération des données de l'employé et de son salaire" });
+    }
+};
 
 module.exports = {
     getSalary,
     calculateTotalSalary,
     createBaseSalary,
-    updateBaseSalary
+    updateBaseSalary,
+    getEmployeeWithSalary
 };

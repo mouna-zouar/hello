@@ -157,6 +157,29 @@ const prisma = new PrismaClient();
         res.status(500).json({ error: 'Erreur serveur lors du calcul des jours restants.' });
     }
 };
+const getEmployeeWithTimeOffs = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const employee = await getEmployeeById(id);
+        if (!employee) {
+            return res.status(404).json({ error: 'Employé introuvable.' });
+        }
+
+        const timeOffs = await prisma.timeOff.findMany({
+            where: { employeeId: parseInt(id) },
+            orderBy: { startDate: 'asc' }
+        });
+
+        res.status(200).json({
+            employee,
+            timeOffs
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur serveur lors de la récupération des congés de l\'employé.' });
+    }
+};
 
 module.exports = {
     deleteTimeOff,
@@ -164,6 +187,7 @@ module.exports = {
     getTimeOffById,
     getAllTimeOffs,
     createTimeOff,
-    getRemainingTimeOff
+    getRemainingTimeOff,
+    getEmployeeWithTimeOffs
 
 }

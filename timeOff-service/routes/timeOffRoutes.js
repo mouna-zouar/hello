@@ -14,5 +14,7 @@ router.delete('/:id', timeOffController.deleteTimeOff);
 
 router.get('/employees/:id/timeoffs/remaining', timeOffController.getRemainingTimeOff);
 
+router.get('/employee/:id/timeoffs',  timeOffController.getEmployeeWithTimeOffs);
+
 
 module.exports = router;
