@@ -59,9 +59,33 @@ const deleteDepartment = async (req, res) => {
     }
 };
 
+const getDepartmentWithRoles = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const department = await prisma.department.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                roles: true,
+            }
+        });
+
+        if (!department) {
+            return res.status(404).json({ error: "Département non trouvé" });
+        }
+
+        res.status(200).json(department);
+    } catch (error) {
+        console.error("Erreur lors de la récupération du département avec les rôles:", error);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+};
+
+
 module.exports = {
     createDepartment,
     getAllDepartments,
     updateDepartment,
-    deleteDepartment
+    deleteDepartment,
+    getDepartmentWithRoles
 };

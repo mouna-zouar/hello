@@ -3,30 +3,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const produceEvent = require("../kafka/kafkaProducer");
 const { registerSchema, loginSchema } = require("../validators/userValidator");
+const EVENTS = require('../constants/events');
 require("dotenv").config();
 
 const prisma = new PrismaClient();
 
-/*const register = async (req, res) => {
-    try {
-        const validatedData = registerSchema.parse(req.body);
-
-        const existingUser = await prisma.user.findUnique({ where: { email: validatedData.email } });
-        if (existingUser) {
-            return res.status(400).json({ error: "Cet email est déjà utilisé" });
-        }
-
-        validatedData.password = await bcrypt.hash(validatedData.password, 10);
-        const user = await prisma.user.create({
-            data: validatedData
-        });
-
-        res.status(201).json({ message: "Utilisateur créé avec succès", user });
-    } catch (error) {
-        console.error(error);
-        res.status(400).json({ error: error.message || "Erreur lors de l'inscription" });
-    }
-};*/
 const register = async (req, res) => {
     try {
         const validatedData = registerSchema.parse(req.body);
@@ -41,15 +22,19 @@ const register = async (req, res) => {
             data: validatedData
         });
 
-        // Produire un événement Kafka et vérifier si cela a réussi
         try {
-            await produceEvent('user-created', {
+            await produceEvent(EVENTS.USER_CREATED, {
                 id: user.id,
                 email: user.email,
                 username: user.username,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                roleId: user.roleId,
+                password:user.password,
+                photo:user.photo,
+                gender :user.gender,
+                status :user.status,
+                roleId:user.roleId,
+                departmentId:user.departmentId,
             });
             console.log('Événement Kafka produit avec succès');
         } catch (error) {
@@ -108,14 +93,12 @@ const login = async (req, res) => {
     }
 };
 
-
 const getAllUsers = async (req, res) => {
     try {
         const { page = 1, limit = 10 } = req.query;
 
         const pageNumber = parseInt(page, 10);
         const limitNumber = parseInt(limit, 10);
-
         const offset = (pageNumber - 1) * limitNumber;
 
         const users = await prisma.user.findMany({
@@ -131,7 +114,6 @@ const getAllUsers = async (req, res) => {
         });
 
         const totalUsers = await prisma.user.count();
-
         const totalPages = Math.ceil(totalUsers / limitNumber);
 
         res.json({
@@ -160,7 +142,13 @@ const getUserById = async (req, res) => {
                 username: true,
                 email: true,
                 firstName: true,
-                lastName: true
+                lastName: true,
+                password:true,
+                photo:true,
+                gender :true,
+                status :true,
+                roleId:true,
+                departmentId:true,
             }
         });
 
@@ -174,7 +162,6 @@ const getUserById = async (req, res) => {
         return res.status(500).json({ error: "Une erreur est survenue" });
     }
 };
-
 
 const deleteUser = async (req, res) => {
     try {
@@ -247,6 +234,64 @@ const verifyTokenAndPermissions = async (req, res) => {
     }
 };
 
+const updateUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { email, username, firstName, lastName, password, photo, gender, status, roleId, departmentId,} = req.body;
+
+        const user = await prisma.user.findUnique({ where: { id: parseInt(id) } });
+        if (!user) {
+            return res.status(404).json({ error: "Utilisateur non trouvé" });
+        }
+
+        if (email) {
+            const existingEmail = await prisma.user.findFirst({
+                where: {
+                    email,
+                    NOT: { id: parseInt(id) }
+                }
+            });
+            if (existingEmail) {
+                return res.status(400).json({ error: "Cet email est déjà utilisé par un autre utilisateur." });
+            }
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(id) },
+            data: {
+                email,
+                username,
+                firstName,
+                lastName,
+                password,
+                photo,
+                gender,
+                status,
+                roleId,
+                departmentId,
+            }
+        });
+
+        await produceEvent(EVENTS.USER_UPDATED, {
+            id: updatedUser.id,
+            email: updatedUser.email,
+            username: updatedUser.username,
+            firstName: updatedUser.firstName,
+            lastName: updatedUser.lastName,
+            password: updatedUser.password,
+            photo: updatedUser.photo,
+            gender: updatedUser.gender,
+            status:updatedUser.status,
+            roleId:updatedUser.roleId,
+            departmentId: updatedUser.departmentId,
+        });
+        res.status(200).json({ message: "Utilisateur mis à jour avec succès", user: updatedUser });
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour de l'utilisateur:", error);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+};
+
 module.exports = {
     register,
     login,
@@ -254,5 +299,6 @@ module.exports = {
     getUserById,
     deleteUser,
     getUserSessions,
+    updateUser,
     verifyTokenAndPermissions
 };

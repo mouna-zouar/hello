@@ -13,4 +13,8 @@ router.put('/:id', authMiddleware,checkPermission("Role", "UPDATE"), roleControl
 
 router.delete('/:id', authMiddleware,checkPermission("RolePermission", "DELETE"), roleController.deleteRole);
 
+router.get('/roles/:id/with-users', roleController.getRoleWithUsers);
+
+router.post('/roles/assign', roleController.assignUserToRole);
+
 module.exports = router;

@@ -30,6 +30,7 @@ router.get("/", authMiddleware,checkPermission("User", "VIEW"), async (req, res)
 router.get("/:id", userController.getUserById);
 router.delete("/:id", authMiddleware,checkPermission("User", "DELETE"), userController.deleteUser);
 router.post("/verify", userController.verifyTokenAndPermissions);
+router.put('/:id', userController.updateUser);
 
 //Session
 router.get("/sessions/:userId", authMiddleware, userController.getUserSessions);
