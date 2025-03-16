@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { getUserById } = require('../services/userService');
 const { getTeamById } = require('../services/equipeService');
+const { checkUserExistence,checkTeamExistence } = require('../kafka/requestResponse');
 const prisma = new PrismaClient();
 
 const getEmployeeWithUser = async (req, res) => {
@@ -23,7 +24,7 @@ const getEmployeeWithUser = async (req, res) => {
     }
 };
 
-const createEmployee = async (req, res) => {
+/*const createEmployee = async (req, res) => {
     try {
         const { userId, position, hireDate, teamId } = req.body;
 
@@ -53,7 +54,39 @@ const createEmployee = async (req, res) => {
         console.error("Erreur lors de la création de l'employé:", error);
         res.status(500).json({ error: "Erreur serveur" });
     }
+};*/
+const createEmployee = async (req, res) => {
+    try {
+        const { userId, position, hireDate, teamId } = req.body;
+
+        const { exists } = await checkUserExistence(userId);
+        if (!exists) {
+            return res.status(404).json({ error: "Utilisateur non trouvé via Kafka." });
+        }
+
+        if (teamId) {
+            const { exists: teamExists } = await checkTeamExistence(teamId);
+            if (!teamExists) {
+                return res.status(404).json({ error: "Équipe non trouvée via Kafka." });
+            }
+        }
+
+        const newEmployee = await prisma.employee.create({
+            data: {
+                id: userId,
+                position,
+                hireDate,
+                teamId,
+            },
+        });
+
+        res.status(201).json({ message: "Employé créé avec succès", employee: newEmployee });
+    } catch (error) {
+        console.error("Erreur createEmployee:", error);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
 };
+
 
 const getAllEmployees = async (req, res) => {
     try {

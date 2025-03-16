@@ -98,6 +98,8 @@ const getTeamById = async (req, res) => {
     }
 };
 
+
+
 const updateTeam = async (req, res) => {
     const { teamId } = req.params;
     const { name } = req.body;

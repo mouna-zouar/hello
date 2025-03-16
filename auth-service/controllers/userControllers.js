@@ -130,7 +130,7 @@ const getAllUsers = async (req, res) => {
     }
 };
 
-const getUserById = async (req, res) => {
+/*const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
         const user = await prisma.user.findUnique({
@@ -162,7 +162,33 @@ const getUserById = async (req, res) => {
         return res.status(500).json({ error: "Une erreur est survenue" });
     }
 };
+*/
 
+const getUserById = async (id) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!user) {
+            return { exists: false };
+        }
+
+        return {
+            exists: true,
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            firstname: user.firstname,
+            lastname:user.lastname,
+            roleId:user.roleId,
+            departmentId:user.departmentId,
+        };
+    } catch (error) {
+        console.error("Erreur dans findUserById:", error);
+        return { error: "Erreur interne" };
+    }
+};
 const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
