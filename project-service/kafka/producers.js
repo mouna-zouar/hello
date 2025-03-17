@@ -9,6 +9,8 @@ const producer = kafka.producer();
 const consumer = kafka.consumer({ groupId: 'project-service-group' }); // Changez ici pour un groupId unique
 
 const pendingEmployeeRequests = new Map();
+const pendingTeamRequests = new Map();
+
 
 const initKafkaRequestResponse = async () => {
     await producer.connect();
@@ -25,6 +27,13 @@ const initKafkaRequestResponse = async () => {
                 if (resolve) {
                     resolve({ employeeId, exists });
                     pendingEmployeeRequests.delete(correlationId);
+                }
+            }
+            if (parsed.teamId !== undefined && parsed.exists !== undefined) {
+                const resolve = pendingTeamRequests.get(correlationId);
+                if (resolve) {
+                    resolve({ teamId: parsed.teamId, exists: parsed.exists });
+                    pendingTeamRequests.delete(correlationId);
                 }
             }
         },
@@ -47,6 +56,21 @@ const checkEmployeeExistence = async (employeeId) => {
 
     return responsePromise;
 };
+const checkTeamExistence = async (teamId) => {
+    const correlationId = uuidv4();
+    const payload = { teamId, correlationId };
+
+    const responsePromise = new Promise((resolve) => {
+        pendingTeamRequests.set(correlationId, resolve);
+    });
+
+    await producer.send({
+        topic: 'team-existence-check',
+        messages: [{ value: JSON.stringify(payload) }],
+    });
+
+    return responsePromise;
+};
 
 const closeKafkaConnection = async () => {
     await producer.disconnect();
@@ -57,4 +81,5 @@ module.exports = {
     initKafkaRequestResponse,
     checkEmployeeExistence,
     closeKafkaConnection,
+    checkTeamExistence
 };
