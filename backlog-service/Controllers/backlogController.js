@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { getProjectById } = require('../services/projectService');
+const { checkProjectExistence } = require('../kafka/producers');
 
 const prisma = new PrismaClient();
 
@@ -11,11 +12,12 @@ const createBacklog = async (req, res) => {
     }
 
     try {
-        const project = await getProjectById(parseInt(projectId));
-        if (!project) {
-            return res.status(404).json({ error: "Projet non trouvé" });
+        if (projectId) {
+            const { exists: projectExists } = await checkProjectExistence(projectId);
+            if (!projectExists) {
+                return res.status(404).json({ error: "project non trouvée via Kafka." });
+            }
         }
-
         const newBacklog = await prisma.backlog.create({
             data: { name, description, projectId: parseInt(projectId) },
         });
