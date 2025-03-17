@@ -98,22 +98,26 @@ const getAllEmployees = async (req, res) => {
     }
 };
 
+
 const getEmployeeById = async (req, res) => {
-    const { id } = req.params;
+    const { employeeId } = req.params;
 
     try {
-        const employee = await prisma.employee.findUnique({ where: { id: parseInt(id) } });
+        const employee = await prisma.employee.findUnique({
+            where: { id: parseInt(employeeId, 10) }
+        });
 
         if (!employee) {
-            return res.status(404).json({ error: "Employé non trouvé" });
+            return res.status(404).json({ error: "employee non trouvée" });
         }
 
         res.status(200).json(employee);
     } catch (error) {
-        console.error(" Erreur lors de la récupération de l'employé:", error);
-        res.status(500).json({ error: "Erreur serveur" });
+        console.error('Erreur lors de la récupération de l\'employee:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération de l'employee" });
     }
 };
+
 
 const updateEmployee = async (req, res) => {
     const { id } = req.params;

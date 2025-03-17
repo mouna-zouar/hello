@@ -3,7 +3,7 @@ const router = express.Router();
 const projectEmployeeController = require('../controllers/projectEmployeeController');
 const checkPermission = require("../middlewares/check");
 const authMiddleware = require("../middlewares/authMiddleware");
-router.post('/',authMiddleware, checkPermission("projectEmployee", "POST"), projectEmployeeController.createProjectEmployeeRelation);
+router.post('/',projectEmployeeController.createProjectEmployeeRelation);
 
 router.get('/:projectId/employees',authMiddleware, checkPermission("projectEmployee", "VIEW"), projectEmployeeController.getEmployeesByProjectId);
 

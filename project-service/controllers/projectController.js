@@ -2,8 +2,9 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const {getTeamById} = require ("../services/equipeService");
 const createProject = async (req, res) => {
-    const { name, description, type,teamId } = req.body;
+    const { name, description, type,teamId,status } = req.body;
     try {
+
             const team = await getTeamById(teamId);
             if (!team) {
                 return res.status(404).json({ error: "Employé non trouvé dans le microservice Employé" });
@@ -13,7 +14,8 @@ const createProject = async (req, res) => {
                 name,
                 description,
                 type,
-                teamId
+                teamId,
+                status: "ONGOING"
             },
         });
 

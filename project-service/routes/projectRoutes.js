@@ -4,7 +4,7 @@ const projectController = require('../controllers/projectController');
 const checkPermission = require("../middlewares/check");
 const authMiddleware = require("../middlewares/authMiddleware");
 
-router.post('/',authMiddleware, checkPermission("Project", "POST"),  projectController.createProject);
+router.post('/',  projectController.createProject);
 
 router.get('/',authMiddleware, checkPermission("Project", "VIEW"), projectController.getAllProjects);
 

@@ -9,7 +9,7 @@ const router = express.Router();
 router.post('/',employeeController.createEmployee);
 router.get('/:id/user', employeeController.getEmployeeWithUser);
 router.get('/',authMiddleware, checkPermission("Employee", "VIEW"),  employeeController.getAllEmployees);
-router.get('/:id', employeeController.getEmployeeById);
+router.get('/:employeeId', employeeController.getEmployeeById);
 router.put('/:id',authMiddleware, checkPermission("Employee", "UPDATE"), employeeController.updateEmployee);
 router.get('/team/employee',authMiddleware, checkPermission("Employee", "VIEW"),  employeeController.getEmployeesByTeamId);
 router.delete('/:id',authMiddleware, checkPermission("Employee", "DELETE"),  employeeController.deleteEmployee);

@@ -1,7 +1,8 @@
 const axios = require('axios');
+const { checkEmployeeExistence } = require('../kafka/producers'); // Assurez-vous d'importer la fonction Kafka
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { getEmployeeById } = require('../services/employeeService');
+
 
 const createProjectEmployeeRelation = async (req, res) => {
     const { projectId, employeeId } = req.body;
@@ -11,17 +12,25 @@ const createProjectEmployeeRelation = async (req, res) => {
     }
 
     try {
-        const employee = await getEmployeeById(employeeId);
-        if (!employee) {
+        console.log(`Vérification de l'existence de l'employé avec ID: ${employeeId}`);
+
+        const employeeExistenceResponse = await checkEmployeeExistence(employeeId);
+
+        console.log(`Réponse de vérification d'existence d'employé:`, employeeExistenceResponse);
+
+        if (!employeeExistenceResponse.exists) {
+            console.log(`Employé avec ID ${employeeId} non trouvé`);
             return res.status(404).json({ error: "Employé non trouvé dans le microservice Employé" });
         }
 
         const projectEmployee = await prisma.projectEmployee.create({
             data: {
                 projectId: projectId,
-                employeeId: employee.id
+                employeeId: employeeId
             }
         });
+
+        console.log(`Relation projet-employé créée avec succès: ${projectEmployee}`);
 
         res.status(201).json({
             message: "Relation projet-employé créée avec succès",
@@ -32,6 +41,7 @@ const createProjectEmployeeRelation = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la création de la relation projet-employé" });
     }
 };
+
 
 const getEmployeesByProjectId = async (req, res) => {
     const { projectId } = req.params;
