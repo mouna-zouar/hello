@@ -2,23 +2,30 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const {getTeamById} = require ("../services/equipeService");
 const { checkTeamExistence } = require('../kafka/producers');
+const {projectSchema} = require("../validators/projectSchema");
 
 const createProject = async (req, res) => {
-    const { name, description, type,teamId,status } = req.body;
+    const { name, description, type, teamId, status } = req.body;
     try {
+        const parsed = projectSchema.safeParse({ name, description, type, teamId, status });
+        if (!parsed.success) {
+            return res.status(400).json({ error: parsed.error.errors });
+        }
+
         if (teamId) {
             const { exists: teamExists } = await checkTeamExistence(teamId);
             if (!teamExists) {
                 return res.status(404).json({ error: "Équipe non trouvée via Kafka." });
             }
         }
+
         const newProject = await prisma.project.create({
             data: {
                 name,
                 description,
                 type,
                 teamId,
-                status: "ONGOING"
+                status: status || "ONGOING"
             },
         });
 
@@ -63,6 +70,11 @@ const updateProject = async (req, res) => {
     const { name, description, type, teamId } = req.body;
 
     try {
+        const parsed = projectSchema.safeParse({ name, description, type, teamId });
+        if (!parsed.success) {
+            return res.status(400).json({ error: parsed.error.errors });
+        }
+
         const team = await checkTeamExistence(teamId);
         if (!team) {
             return res.status(404).json({ error: "L'équipe avec l'ID fourni n'a pas été trouvée." });

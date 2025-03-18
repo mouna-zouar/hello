@@ -4,74 +4,28 @@ const { getBacklogById } = require('../services/backlogService');
 const { getSprintById } = require('../services/sprintService');
 const {getEmployeeById} = require('../services/employeeService');
 const {checkProjectExistence,checkBacklogExistence,checkSprintExistence,checkEmployeeExistence} = require('../kafka/producers')
+const { taskSchema } = require('../validators/taskSchema');
 
 const axios =require  ('axios');
 
 const prisma = new PrismaClient();
 
 const createTask = async (req, res) => {
-    const { title, description, priority, status, type, startDate, endDate, progress, projectId, backlogId, sprintId, parentId, assignedTo } = req.body;
-
-    if (!title || !priority || !status || !projectId || !backlogId || !sprintId) {
-        return res.status(400).json({ error: "Les champs 'title', 'priority', 'status', 'projectId', 'backlogId', et 'sprintId' sont requis." });
-    }
-
-    const parsedProjectId = parseInt(projectId);
-    const parsedBacklogId = parseInt(backlogId);
-    const parsedSprintId = parseInt(sprintId);
-    const parsedAssignedTo = parseInt(assignedTo);
-
-    if (isNaN(parsedProjectId) || isNaN(parsedBacklogId) || isNaN(parsedSprintId) || isNaN(parsedAssignedTo)) {
-        return res.status(400).json({ error: "Les ID de projet, backlog ou sprint ne sont pas valides." });
-    }
-
     try {
+        const validatedData = taskSchema.parse(req.body);
+
+        const { title, description, priority, status, type, startDate, endDate, progress, projectId, backlogId, sprintId, parentId, assignedTo } = validatedData;
+
         const [backlogExistence, projectExistence, sprint, employee] = await Promise.all([
-            checkBacklogExistence(parsedBacklogId),
-            checkProjectExistence(parsedProjectId),
-            checkSprintExistence(parsedSprintId),
-            checkEmployeeExistence(parsedAssignedTo)
+            checkBacklogExistence(backlogId),
+            checkProjectExistence(projectId),
+            checkSprintExistence(sprintId),
+            checkEmployeeExistence(assignedTo)
         ]);
 
-        if (!backlogExistence.exists) {
-            return res.status(404).json({ error: "Le backlog n'a pas été trouvé." });
-        }
-
-        if (!projectExistence.exists) {
-            return res.status(404).json({ error: "Le projet n'a pas été trouvé." });
-        }
-
-        if (!sprint || !employee) {
-            return res.status(404).json({ error: "Sprint ou employé non trouvé." });
-        }
-
-        // Vérification des congés de l'employé
-        /*try {
-            const response = await axios.get(`http://localhost:3011/employees/${parsedAssignedTo}/timeoffs/remaining`);
-            const remainingDays = response.data.remainingDays;
-
-            if (remainingDays <= 0) {
-                return res.status(400).json({ error: 'L\'employé est en congé et ne peut pas être assigné à une tâche.' });
-            }
-
-            const timeOffs = await axios.get(`http://localhost:3011/employees/${parsedAssignedTo}/timeoffs`);
-            const timeOffsDuringTaskPeriod = timeOffs.data.filter((timeOff) => {
-                const timeOffStart = new Date(timeOff.startDate);
-                const timeOffEnd = new Date(timeOff.endDate);
-                const taskStart = new Date(startDate);
-                const taskEnd = new Date(endDate);
-
-                return (taskStart <= timeOffEnd && taskEnd >= timeOffStart);
-            });
-
-            if (timeOffsDuringTaskPeriod.length > 0) {
-                return res.status(400).json({ error: 'L\'employé est en congé pendant cette période et ne peut pas être assigné à cette tâche.' });
-            }
-
-        } catch (error) {
-            console.error("Erreur lors de la vérification des congés de l'employé", error);
-            return res.status(500).json({ error: "Erreur lors de la vérification des congés de l'employé." });
-        }*/
+        if (!backlogExistence.exists) return res.status(404).json({ error: 'Le backlog n\'a pas été trouvé.' });
+        if (!projectExistence.exists) return res.status(404).json({ error: 'Le projet n\'a pas été trouvé.' });
+        if (!sprint || !employee) return res.status(404).json({ error: 'Sprint ou employé non trouvé.' });
 
         const newTask = await prisma.task.create({
             data: {
@@ -83,21 +37,23 @@ const createTask = async (req, res) => {
                 startDate,
                 endDate,
                 progress,
-                projectId: parsedProjectId,
-                backlogId: parsedBacklogId,
-                sprintId: parsedSprintId,
+                projectId,
+                backlogId,
+                sprintId,
                 parentId: parentId || null,
-                assignedTo: parsedAssignedTo
+                assignedTo
             }
         });
-        res.status(201).json({ message: "Tâche créée avec succès", task: newTask });
 
+        res.status(201).json({ message: "Tâche créée avec succès", task: newTask });
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: error.errors });
+        }
         console.error('Erreur lors de la création de la tâche:', error);
-        res.status(500).json({ error: "Erreur serveur lors de la création de la tâche." });
+        res.status(500).json({ error: 'Erreur serveur lors de la création de la tâche.' });
     }
 };
-
 
 const getAllTasks = async (req, res) => {
     try {
@@ -127,58 +83,36 @@ const getTaskById = async (req, res) => {
 };
 
 const updateTask = async (req, res) => {
-    const { id } = req.params;
-    const { title, description, status, priority,type, startDate , endDate, progress, assignedTo, sprintId, projectId, backlogId, parentId } = req.body;
-
-    const parsedProjectId = parseInt(projectId);
-    const parsedBacklogId = parseInt(backlogId);
-    const parsedSprintId = parseInt(sprintId);
-    const parsedAssignedTo = parseInt(assignedTo);
-
-    if (isNaN(parsedProjectId) || isNaN(parsedBacklogId) || isNaN(parsedSprintId) || isNaN(parsedAssignedTo)) {
-        return res.status(400).json({ error: "Les ID de projet, backlog, sprint ou assignedTo ne sont pas valides." });
-    }
-
     try {
-        const existingTask = await prisma.task.findUnique({ where: { id: parseInt(id) } });
-        if (!existingTask) {
-            return res.status(404).json({ error: "Tâche non trouvée." });
-        }
+        const validatedData = taskSchema.partial().parse(req.body);
+
+        const { title, description, priority, status, type, startDate, endDate, progress, projectId, backlogId, sprintId, parentId, assignedTo } = validatedData;
 
         const [backlogExistence, projectExistence, sprint, employee] = await Promise.all([
-            checkBacklogExistence(parsedBacklogId),
-            checkProjectExistence(parsedProjectId),
-            checkSprintExistence(parsedSprintId),
-            checkEmployeeExistence(parsedAssignedTo)
+            checkBacklogExistence(backlogId),
+            checkProjectExistence(projectId),
+            checkSprintExistence(sprintId),
+            checkEmployeeExistence(assignedTo)
         ]);
 
-        if (!projectExistence || !backlogExistence || !sprint || (assignedTo && !employee)) {
-            return res.status(404).json({ error: "Projet, backlog, sprint ou employé non trouvé." });
-        }
+        if (!backlogExistence.exists) return res.status(404).json({ error: 'Le backlog n\'a pas été trouvé.' });
+        if (!projectExistence.exists) return res.status(404).json({ error: 'Le projet n\'a pas été trouvé.' });
+        if (!sprint || !employee) return res.status(404).json({ error: 'Sprint ou employé non trouvé.' });
 
         const updatedTask = await prisma.task.update({
-            where: { id: parseInt(id) },
-            data: {
-                title,
-                description,
-                status,
-                priority,
-                type,
-                startDate,
-                endDate,
-                progress,
-                assignedTo: assignedTo ? parsedAssignedTo : null,
-                sprintId: parsedSprintId,
-                projectId: parsedProjectId,
-                backlogId: parsedBacklogId,
-                parentId: parentId || null
-            }
+            where: {
+                id: req.params.id,
+            },
+            data: validatedData,
         });
 
-        return res.status(200).json(updatedTask);
+        res.status(200).json({ message: 'Tâche mise à jour avec succès', task: updatedTask });
     } catch (error) {
-        console.error("Erreur lors de la mise à jour de la tâche:", error);
-        return res.status(500).json({ error: "Erreur interne du serveur." });
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ error: error.errors });
+        }
+        console.error('Erreur lors de la mise à jour de la tâche:', error);
+        res.status(500).json({ error: 'Erreur serveur lors de la mise à jour de la tâche.' });
     }
 };
 
@@ -415,7 +349,7 @@ const getTasksGroupedByBacklog = async (req, res) => {
     try {
         const tasks = await prisma.task.findMany({
             include: {
-                backlog: true, // Inclure les informations du backlog
+                backlog: true,
             },
             where: {
                 status: "Backlog", // Seulement les tâches en backlog

@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const { getEmployeeById } = require('../services/employeeservice');
 const { getTasksByEmployee } = require('../services/taskservice');
 const {checkEmployeeExistence} = require('../kafka/producers');
+const {salarySchema} = require("../validators/salarySchema");
 
 const getSalary = async (req, res) => {
     const { employeeId } = req.params;
@@ -68,7 +69,12 @@ const calculateTotalSalary = async (req, res) => {
 };
 
 const createBaseSalary = async (req, res) => {
-    const { employeeId, baseSalary } = req.body;
+    const parsedData = salarySchema.safeParse(req.body);
+    if (!parsedData.success) {
+        return res.status(400).json({ error: "Données invalides", details: parsedData.error.errors });
+    }
+
+    const { employeeId, baseSalary } = parsedData.data;
 
     try {
         const employee = await checkEmployeeExistence(employeeId);
@@ -91,9 +97,15 @@ const createBaseSalary = async (req, res) => {
     }
 };
 
+
 const updateBaseSalary = async (req, res) => {
     const { employeeId } = req.params;
     const { baseSalary } = req.body;
+
+    const parsedData = salarySchema.safeParse({ employeeId: parseInt(employeeId), baseSalary });
+    if (!parsedData.success) {
+        return res.status(400).json({ error: "Données invalides", details: parsedData.error.errors });
+    }
 
     try {
         const existingSalary = await prisma.salary.findUnique({
@@ -111,10 +123,11 @@ const updateBaseSalary = async (req, res) => {
 
         res.status(200).json(updatedSalary);
     } catch (error) {
-        console.error(" Erreur updateBaseSalary :", error.message);
+        console.error("Erreur updateBaseSalary :", error.message);
         res.status(500).json({ error: "Erreur lors de la mise à jour du salaire de base" });
     }
 };
+
 const getEmployeeWithSalary = async (req, res) => {
     const { employeeId } = req.params;
 

@@ -2,6 +2,8 @@ const { PrismaClient } = require('@prisma/client');
 const { getUserById } = require('../services/userService');
 const { getTeamById } = require('../services/equipeService');
 const { checkUserExistence,checkTeamExistence } = require('../kafka/requestResponse');
+const {employeeSchema} = require("../validators/employeeValidator");
+
 const prisma = new PrismaClient();
 
 const getEmployeeWithUser = async (req, res) => {
@@ -24,40 +26,10 @@ const getEmployeeWithUser = async (req, res) => {
     }
 };
 
-/*const createEmployee = async (req, res) => {
-    try {
-        const { userId, position, hireDate, teamId } = req.body;
-
-        const user = await getUserById(userId);
-        if (!user) {
-            return res.status(404).json({ error: "Utilisateur non trouvé dans Auth Service" });
-        }
-
-        if (teamId) {
-            const team = await getTeamById(teamId);
-            if (!team) {
-                return res.status(404).json({ error: "L'équipe référencée n'existe pas" });
-            }
-        }
-
-        const newEmployee = await prisma.employee.create({
-            data: {
-                id: userId,
-                position,
-                hireDate,
-                teamId,
-            },
-        });
-
-        res.status(201).json({ message: "Employé créé avec succès", employee: newEmployee });
-    } catch (error) {
-        console.error("Erreur lors de la création de l'employé:", error);
-        res.status(500).json({ error: "Erreur serveur" });
-    }
-};*/
 const createEmployee = async (req, res) => {
     try {
-        const { userId, position, hireDate, teamId } = req.body;
+        const validatedData = employeeSchema.parse(req.body);
+        const { userId, position, hireDate, teamId } = validatedData;
 
         const { exists } = await checkUserExistence(userId);
         if (!exists) {
@@ -82,11 +54,13 @@ const createEmployee = async (req, res) => {
 
         res.status(201).json({ message: "Employé créé avec succès", employee: newEmployee });
     } catch (error) {
+        if (error.name === 'ZodError') {
+            return res.status(400).json({ error: error.errors.map(e => e.message) });
+        }
         console.error("Erreur createEmployee:", error);
         res.status(500).json({ error: "Erreur serveur" });
     }
 };
-
 
 const getAllEmployees = async (req, res) => {
     try {
@@ -97,7 +71,6 @@ const getAllEmployees = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur" });
     }
 };
-
 
 const getEmployeeById = async (req, res) => {
     const { employeeId } = req.params;
@@ -118,12 +91,12 @@ const getEmployeeById = async (req, res) => {
     }
 };
 
-
 const updateEmployee = async (req, res) => {
     const { id } = req.params;
-    const { userId, position, hireDate, teamId } = req.body;
-
     try {
+        const validatedData = employeeSchema.parse(req.body);
+        const { userId, position, hireDate, teamId } = validatedData;
+
         if (userId) {
             const user = await checkUserExistence(userId);
             if (!user) {
@@ -150,6 +123,9 @@ const updateEmployee = async (req, res) => {
 
         res.status(200).json({ message: "Employé mis à jour avec succès", employee: updatedEmployee });
     } catch (error) {
+        if (error.name === 'ZodError') {
+            return res.status(400).json({ error: error.errors.map(e => e.message) });
+        }
         console.error("Erreur lors de la mise à jour de l'employé:", error);
 
         if (error.code === "P2025") {

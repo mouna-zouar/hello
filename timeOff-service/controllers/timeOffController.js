@@ -1,10 +1,16 @@
 const { PrismaClient, TimeOffStatus, TimeOffType } =require ('@prisma/client');
 const { getEmployeeById } =require ('../services/employeeservice');
+const {createTimeOffSchema} = require("../validators/timeOffSchema");
 
 const prisma = new PrismaClient();
 
- const createTimeOff = async (req, res) => {
-    const { employeeId, startDate, endDate, timeOffType } = req.body;
+const createTimeOff = async (req, res) => {
+    const validationResult = createTimeOffSchema.safeParse(req.body);
+    if (!validationResult.success) {
+        return res.status(400).json({ error: validationResult.error.errors });
+    }
+
+    const { employeeId, startDate, endDate, timeOffType } = validationResult.data;
 
     try {
         const employee = await getEmployeeById(employeeId);
@@ -12,16 +18,12 @@ const prisma = new PrismaClient();
             return res.status(404).json({ error: 'Employé introuvable' });
         }
 
-        if (!Object.values(TimeOffType).includes(timeOffType)) {
-            return res.status(400).json({ error: 'Type de TimeOff invalide.' });
-        }
-
         const timeOff = await prisma.timeOff.create({
             data: {
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
                 timeOffType,
-                status: TimeOffStatus.EN_ATTENTE,
+                status: TimeOffStatus.PENDING,
                 employeeId
             }
         });
@@ -62,9 +64,14 @@ const prisma = new PrismaClient();
     }
 };
 
- const updateTimeOff = async (req, res) => {
+const updateTimeOff = async (req, res) => {
     const { id } = req.params;
-    const { employeeId, startDate, endDate, timeOffType, status } = req.body;
+    const validationResult = updateTimeOffSchema.safeParse(req.body);
+    if (!validationResult.success) {
+        return res.status(400).json({ error: validationResult.error.errors });
+    }
+
+    const { employeeId, startDate, endDate, timeOffType, status } = validationResult.data;
 
     try {
         const employee = await getEmployeeById(employeeId);
@@ -83,7 +90,7 @@ const prisma = new PrismaClient();
         const updatedTimeOff = await prisma.timeOff.update({
             where: { id: parseInt(id) },
             data: {
-                employeeId, // L'employeeId est mis à jour également
+                employeeId,
                 startDate: startDate ? new Date(startDate) : undefined,
                 endDate: endDate ? new Date(endDate) : undefined,
                 timeOffType,
@@ -100,7 +107,6 @@ const prisma = new PrismaClient();
         res.status(500).json({ error: 'Erreur serveur lors de la mise à jour du TimeOff.' });
     }
 };
-
  const deleteTimeOff = async (req, res) => {
     const { id } = req.params;
 
@@ -157,7 +163,8 @@ const prisma = new PrismaClient();
         res.status(500).json({ error: 'Erreur serveur lors du calcul des jours restants.' });
     }
 };
-const getEmployeeWithTimeOffs = async (req, res) => {
+
+ const getEmployeeWithTimeOffs = async (req, res) => {
     const { id } = req.params;
 
     try {

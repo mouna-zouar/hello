@@ -1,19 +1,18 @@
 const { PrismaClient } = require('@prisma/client');
 const { getProjectById } = require('../services/projectService');
 const { getBacklogById } = require('../services/backlogService');
+const { createSprintSchema, updateSprintSchema } = require('../validators/sprintSchema'); // Import du schéma
 
 const { getTasksBySprintId,updateTaskSprint } = require('../services/taskService');
 const {checkProjectExistence,checkBacklogExistence} = require('../kafka/producers')
 const prisma = new PrismaClient();
 
 const createSprint = async (req, res) => {
-    const { name, startDate, endDate, projectId ,backlogId} = req.body;
-
-    if (!name || !startDate || !endDate || !projectId ||!backlogId) {
-        return res.status(400).json({ message: "Tous les champs (name, startDate, endDate, projectId) sont requis." });
-    }
+    const { name, startDate, endDate, projectId, backlogId } = req.body;
 
     try {
+        createSprintSchema.parse({ name, startDate, endDate, projectId, backlogId });
+
         if (projectId) {
             const { exists: projectExists } = await checkProjectExistence(projectId);
             if (!projectExists) {
@@ -33,7 +32,7 @@ const createSprint = async (req, res) => {
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
                 projectId: parseInt(projectId),
-                backlogId:parseInt(backlogId)
+                backlogId: parseInt(backlogId)
             }
         });
 
@@ -76,6 +75,8 @@ const updateSprint = async (req, res) => {
     const { name, startDate, endDate, projectId, backlogId } = req.body;
 
     try {
+        updateSprintSchema.parse({ name, startDate, endDate, projectId, backlogId });
+
         const sprint = await prisma.sprint.findUnique({ where: { id: parseInt(id) } });
 
         if (!sprint) {
