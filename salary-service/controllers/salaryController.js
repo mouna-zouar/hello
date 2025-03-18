@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { getEmployeeById } = require('../services/employeeservice');
 const { getTasksByEmployee } = require('../services/taskservice');
+const {checkEmployeeExistence} = require('../kafka/producers');
 
 const getSalary = async (req, res) => {
     const { employeeId } = req.params;
@@ -70,7 +71,7 @@ const createBaseSalary = async (req, res) => {
     const { employeeId, baseSalary } = req.body;
 
     try {
-        const employee = await getEmployeeById(employeeId);
+        const employee = await checkEmployeeExistence(employeeId);
         if (!employee) return res.status(404).json({ error: "Employé non trouvé" });
 
         const salary = await prisma.salary.create({
