@@ -3,11 +3,13 @@ const { getProjectById } = require('../services/projectService');
 const { getBacklogById } = require('../services/backlogService');
 const { getSprintById } = require('../services/sprintService');
 const {getEmployeeById} = require('../services/employeeService');
+const {checkProjectExistence,checkBacklogExistence,checkSprintExistence,checkEmployeeExistence} = require('../kafka/producers')
+
 const axios =require  ('axios');
 
 const prisma = new PrismaClient();
 
- const createTask = async (req, res) => {
+const createTask = async (req, res) => {
     const { title, description, priority, status, type, startDate, endDate, progress, projectId, backlogId, sprintId, parentId, assignedTo } = req.body;
 
     if (!title || !priority || !status || !projectId || !backlogId || !sprintId) {
@@ -24,26 +26,35 @@ const prisma = new PrismaClient();
     }
 
     try {
-        const [project, backlog, sprint] = await Promise.all([
-            getProjectById(parsedProjectId),
-            getBacklogById(parsedBacklogId),
-            getSprintById(parsedSprintId),
-            getEmployeeById(parsedAssignedTo)
+        const [backlogExistence, projectExistence, sprint, employee] = await Promise.all([
+            checkBacklogExistence(parsedBacklogId),
+            checkProjectExistence(parsedProjectId),
+            checkSprintExistence(parsedSprintId),
+            checkEmployeeExistence(parsedAssignedTo)
         ]);
 
-        if (!project || !backlog || !sprint) {
-            return res.status(404).json({ error: "Projet, backlog ou sprint non trouvé." });
+        if (!backlogExistence.exists) {
+            return res.status(404).json({ error: "Le backlog n'a pas été trouvé." });
         }
 
-        try {
-            const response = await axios.get(`http://timeoff-service/employees/${parsedAssignedTo}/timeoffs/remaining`);
+        if (!projectExistence.exists) {
+            return res.status(404).json({ error: "Le projet n'a pas été trouvé." });
+        }
+
+        if (!sprint || !employee) {
+            return res.status(404).json({ error: "Sprint ou employé non trouvé." });
+        }
+
+        // Vérification des congés de l'employé
+        /*try {
+            const response = await axios.get(`http://localhost:3011/employees/${parsedAssignedTo}/timeoffs/remaining`);
             const remainingDays = response.data.remainingDays;
 
             if (remainingDays <= 0) {
                 return res.status(400).json({ error: 'L\'employé est en congé et ne peut pas être assigné à une tâche.' });
             }
 
-            const timeOffs = await axios.get(`http://timeoff-service/employees/${parsedAssignedTo}/timeoffs`);
+            const timeOffs = await axios.get(`http://localhost:3011/employees/${parsedAssignedTo}/timeoffs`);
             const timeOffsDuringTaskPeriod = timeOffs.data.filter((timeOff) => {
                 const timeOffStart = new Date(timeOff.startDate);
                 const timeOffEnd = new Date(timeOff.endDate);
@@ -60,7 +71,7 @@ const prisma = new PrismaClient();
         } catch (error) {
             console.error("Erreur lors de la vérification des congés de l'employé", error);
             return res.status(500).json({ error: "Erreur lors de la vérification des congés de l'employé." });
-        }
+        }*/
 
         const newTask = await prisma.task.create({
             data: {
@@ -79,8 +90,8 @@ const prisma = new PrismaClient();
                 assignedTo: parsedAssignedTo
             }
         });
-
         res.status(201).json({ message: "Tâche créée avec succès", task: newTask });
+
     } catch (error) {
         console.error('Erreur lors de la création de la tâche:', error);
         res.status(500).json({ error: "Erreur serveur lors de la création de la tâche." });
