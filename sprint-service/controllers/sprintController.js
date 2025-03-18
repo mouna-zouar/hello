@@ -3,7 +3,7 @@ const { getProjectById } = require('../services/projectService');
 const { getBacklogById } = require('../services/backlogService');
 
 const { getTasksBySprintId,updateTaskSprint } = require('../services/taskService');
-
+const {checkProjectExistence,checkBacklogExistence} = require('../kafka/producers')
 const prisma = new PrismaClient();
 
 const createSprint = async (req, res) => {
@@ -14,15 +14,16 @@ const createSprint = async (req, res) => {
     }
 
     try {
-        const project = await getProjectById(projectId);
-        if (!project) {
-            return res.status(404).json({ message: "Projet non trouvé" });
+        if (projectId) {
+            const { exists: projectExists } = await checkProjectExistence(projectId);
+            if (!projectExists) {
+                return res.status(404).json({ error: "project non trouvée via Kafka." });
+            }
         }
-        let backlog = null;
         if (backlogId) {
-            backlog = await getBacklogById(backlogId);
-            if (!backlog) {
-                return res.status(404).json({ message: "Backlog non trouvé" });
+            const { exists: backlogExists } = await checkBacklogExistence(backlogId);
+            if (!backlogExists) {
+                return res.status(404).json({ error: "backlog non trouvée via Kafka." });
             }
         }
 

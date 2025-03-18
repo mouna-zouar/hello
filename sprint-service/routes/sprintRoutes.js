@@ -4,7 +4,7 @@ const checkPermission = require("../middlewares/check");
 const authMiddleware = require("../middlewares/authMiddleware");
 const router = express.Router();
 
-router.post('/',authMiddleware, checkPermission("Sprint", "CREATE"),sprintController.createSprint);
+router.post('/',sprintController.createSprint);
 
 router.get('/',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getAllSprints);
 
