@@ -3,7 +3,7 @@ const router = express.Router();
 const meetingController = require('../controllers/meetingController');
 const checkPermission = require("../middlewares/check");
 const authMiddleware = require("../middlewares/authMiddleware");
-router.post('/',authMiddleware, checkPermission("Meeting", "POST"), meetingController.createSprintMeeting);
+router.post('/', meetingController.createSprintMeeting);
 
 router.get('/',authMiddleware, checkPermission("Meeting", "VIEW"), meetingController.getSprintMeetings);
 

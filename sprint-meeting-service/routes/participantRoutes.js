@@ -8,7 +8,7 @@ const {
     deleteParticipant
 } = require('../controllers/participantController');
 
-router.post('/',authMiddleware, checkPermission("Participant", "CREATE"), addParticipant);
+router.post('/', addParticipant);
 router.delete('/:id',authMiddleware, checkPermission("Participant", "DELETE"),deleteParticipant);
 
 router.get('/:meetingId',authMiddleware, checkPermission("Participant", "VIEW"), getMeetingParticipants);

@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { getEmployeeById } = require('../services/employeeService');
 const { sendEmail } = require('../services/emailService');
+const {checkEmployeeExistence} = require("../kafka/producers");
 
 const addParticipant = async (req, res) => {
     const { meetingId, employeeId } = req.body;
@@ -16,7 +17,8 @@ const addParticipant = async (req, res) => {
             return res.status(404).json({ error: "Réunion non trouvée." });
         }
 
-        const employee = await getEmployeeById(employeeId);
+        const employee = await checkEmployeeExistence(employeeId);
+
         if (!employee) {
             return res.status(404).json({ error: "Employé non trouvé." });
         }

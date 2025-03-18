@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const { getProjectById } = require('../services/projectService');
 const { getTaskById } = require('../services/taskService');
 const { getSprintById } = require('../services/sprintService');
+const {checkProjectExistence,checkTaskExistence,checkSprintExistence} = require('../kafka/producers')
 
 const createSprintMeeting = async (req, res) => {
     const { sprintId, meetingDate, agenda, participants, taskId, projectId,onlineMeetingLink,status } = req.body;
@@ -20,14 +21,19 @@ const createSprintMeeting = async (req, res) => {
     }
 
     try {
-        const [project, task, sprint] = await Promise.all([
-            getProjectById(parsedProjectId),
-            getTaskById(parsedTaskId),
-            getSprintById(parsedSprintId)
+        const [taskExistence, projectExistence, sprint, employee] = await Promise.all([
+            checkTaskExistence(parsedTaskId),
+            checkProjectExistence(parsedProjectId),
+            checkSprintExistence(parsedSprintId),
         ]);
 
-        if (!project || !task || !sprint) {
-            return res.status(404).json({ error: "Projet, tâche ou sprint non trouvé." });
+
+        if (!taskExistence.exists) {
+            return res.status(404).json({ error: "Le task n'a pas été trouvé." });
+        }
+
+        if (!projectExistence.exists) {
+            return res.status(404).json({ error: "Le projet n'a pas été trouvé." });
         }
 
         const newMeeting = await prisma.sprintMeeting.create({
