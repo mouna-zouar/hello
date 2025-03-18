@@ -2,6 +2,7 @@ const axios = require('axios');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { getEmployeeById, updateEmployee } = require('../services/employeeService');
+const {checkEmployeeExistence}=require('../kafka/producers');
 
 const getEmployeesByTeamId = async (req, res) => {
     const { teamId } = req.params;
@@ -98,8 +99,6 @@ const getTeamById = async (req, res) => {
     }
 };
 
-
-
 const updateTeam = async (req, res) => {
     const { teamId } = req.params;
     const { name } = req.body;
@@ -165,7 +164,7 @@ const assignEmployeeToTeam = async (req, res) => {
             return res.status(404).json({ error: "Équipe non trouvée" });
         }
 
-        const employee = await getEmployeeById(employeeIdParsed);
+        const employee = await checkEmployeeExistence(employeeIdParsed);
 
         if (!employee) {
             return res.status(404).json({ error: "Employé non trouvé" });

@@ -31,7 +31,7 @@ const calculateTotalSalary = async (req, res) => {
     const { employeeId } = req.body;
 
     try {
-        const employee = await getEmployeeById(employeeId);
+        const employee = await checkEmployeeExistence(employeeId);
         if (!employee) return res.status(404).json({ error: "Employé non trouvé" });
 
         const tasks = await getTasksByEmployee(employeeId);
@@ -119,7 +119,7 @@ const getEmployeeWithSalary = async (req, res) => {
     const { employeeId } = req.params;
 
     try {
-        const employee = await getEmployeeById(employeeId);
+        const employee = await checkEmployeeExistence(employeeId);
         if (!employee) return res.status(404).json({ error: "Employé non trouvé" });
 
         const salary = await prisma.salary.findUnique({

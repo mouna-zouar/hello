@@ -99,61 +99,6 @@ const createTask = async (req, res) => {
 };
 
 
-/*const createTask = async (req, res) => {
-    const { title, description, priority, status, type, startDate , endDate, progress,projectId, backlogId, sprintId, parentId, assignedTo } = req.body;
-
-    if (!title || !priority || !status || !projectId || !backlogId || !sprintId) {
-        return res.status(400).json({ error: "Les champs 'title', 'priority', 'status', 'projectId', 'backlogId', et 'sprintId' sont requis." });
-    }
-
-    const parsedProjectId = parseInt(projectId);
-    const parsedBacklogId = parseInt(backlogId);
-    const parsedSprintId = parseInt(sprintId);
-    const parsedassignedTo = parseInt(assignedTo);
-
-
-    if (isNaN(parsedProjectId) || isNaN(parsedBacklogId) || isNaN(parsedSprintId) || isNaN(parsedassignedTo)) {
-        return res.status(400).json({ error: "Les ID de projet, backlog ou sprint ne sont pas valides." });
-    }
-
-    try {
-        const [project, backlog, sprint] = await Promise.all([
-            getProjectById(parsedProjectId),
-            getBacklogById(parsedBacklogId),
-            getSprintById(parsedSprintId),
-            getEmployeeById(parsedassignedTo)
-        ]);
-
-        if (!project || !backlog || !sprint) {
-            return res.status(404).json({ error: "Projet, backlog ou sprint non trouvé." });
-        }
-
-        const newTask = await prisma.task.create({
-            data: {
-                title,
-                description,
-                priority,
-                status,
-                type,
-                startDate ,
-                endDate,
-                progress,
-                projectId: parsedProjectId,
-                backlogId: parsedBacklogId,
-                sprintId: parsedSprintId,
-                parentId: parentId || null,
-                assignedTo: parsedassignedTo
-            }
-        });
-
-        res.status(201).json({ message: "Tâche créée avec succès", task: newTask });
-    } catch (error) {
-        console.error('Erreur lors de la création de la tâche:', error);
-        res.status(500).json({ error: "Erreur serveur lors de la création de la tâche." });
-    }
-};
-*/
-
 const getAllTasks = async (req, res) => {
     try {
         const tasks = await prisma.task.findMany();
@@ -200,14 +145,14 @@ const updateTask = async (req, res) => {
             return res.status(404).json({ error: "Tâche non trouvée." });
         }
 
-        const [project, backlog, sprint, employee] = await Promise.all([
-            getProjectById(parsedProjectId),
-            getBacklogById(parsedBacklogId),
-            getSprintById(parsedSprintId),
-            getEmployeeById(parsedAssignedTo)
+        const [backlogExistence, projectExistence, sprint, employee] = await Promise.all([
+            checkBacklogExistence(parsedBacklogId),
+            checkProjectExistence(parsedProjectId),
+            checkSprintExistence(parsedSprintId),
+            checkEmployeeExistence(parsedAssignedTo)
         ]);
 
-        if (!project || !backlog || !sprint || (assignedTo && !employee)) {
+        if (!projectExistence || !backlogExistence || !sprint || (assignedTo && !employee)) {
             return res.status(404).json({ error: "Projet, backlog, sprint ou employé non trouvé." });
         }
 
@@ -290,7 +235,8 @@ const getProjectWithTasks = async (req, res) => {
     const { projectId } = req.params;
 
     try {
-        const project = await getProjectById(parseInt(projectId));
+        const project = await checkProjectExistence(parseInt(projectId));
+
         if (!project) {
             return res.status(404).json({ error: "Projet non trouvé" });
         }
@@ -507,7 +453,7 @@ const assignTaskToEmployee = async (req, res) => {
     try {
         const [task, employee] = await Promise.all([
             prisma.task.findUnique({ where: { id: parseInt(id) } }),
-            getEmployeeById(parsedAssignedTo)
+            checkEmployeeExistence(parsedAssignedTo),
         ]);
 
         if (!task) {

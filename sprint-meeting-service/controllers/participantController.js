@@ -77,7 +77,7 @@ const getMeetingParticipants = async (req, res) => {
         // Récupérer les détails des employés via le service
         const employeeDetails = await Promise.all(
             participants.map(async (participant) => {
-                return await getEmployeeById(participant.employeeId);
+                return await checkEmployeeExistence(participant.employeeId);
             })
         );
 

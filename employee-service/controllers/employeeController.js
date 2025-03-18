@@ -11,7 +11,7 @@ const getEmployeeWithUser = async (req, res) => {
         const employee = await prisma.employee.findUnique({ where: { id: parseInt(id) } });
         if (!employee) return res.status(404).json({ error: "Employé non trouvé" });
 
-        const user = await getUserById(employee.id);
+        const user = await checkUserExistence(employee.id);
         if (!user) return res.status(404).json({ error: "Utilisateur non trouvé dans le service Auth" });
 
         res.json({
@@ -125,14 +125,14 @@ const updateEmployee = async (req, res) => {
 
     try {
         if (userId) {
-            const user = await getUserById(userId);
+            const user = await checkUserExistence(userId);
             if (!user) {
                 return res.status(404).json({ error: "Utilisateur non trouvé dans le microservice Auth" });
             }
         }
 
         if (teamId) {
-            const team = await getTeamById(teamId);
+            const team = await checkTeamExistence(teamId);
             if (!team) {
                 return res.status(404).json({ error: "L'équipe référencée n'existe pas" });
             }
@@ -196,7 +196,7 @@ const getEmployeesByTeamId = async (req, res) => {
 
 const assignEmployeeToTeam = async (employeeId, teamId) => {
     try {
-        const team = await getTeamById(teamId);
+        const team = await checkTeamExistence(teamId);
         if (!team) {
             throw new Error("L'équipe n'existe pas.");
         }

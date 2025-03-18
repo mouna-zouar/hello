@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const {getTeamById} = require ("../services/equipeService");
-const { checkTeamExistence } = require('../kafka/producers'); // Assurez-vous d'importer la fonction Kafka
+const { checkTeamExistence } = require('../kafka/producers');
 
 const createProject = async (req, res) => {
     const { name, description, type,teamId,status } = req.body;
@@ -63,7 +63,7 @@ const updateProject = async (req, res) => {
     const { name, description, type, teamId } = req.body;
 
     try {
-        const team = await getTeamById(teamId);
+        const team = await checkTeamExistence(teamId);
         if (!team) {
             return res.status(404).json({ error: "L'équipe avec l'ID fourni n'a pas été trouvée." });
         }
@@ -100,7 +100,7 @@ const assignProjectToTeam = async (req, res) => {
     }
 
     try {
-        const team = await getTeamById(teamIdParsed);
+        const team = await checkTeamExistence(teamIdParsed);
         if (!team) {
             return res.status(404).json({ error: "Équipe non trouvée" });
         }

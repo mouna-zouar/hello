@@ -83,14 +83,14 @@ const updateSprint = async (req, res) => {
         }
 
         if (projectId) {
-            const project = await getProjectById(parseInt(projectId));
+            const project = await checkProjectExistence(parseInt(projectId));
             if (!project) {
                 return res.status(404).json({ message: "Projet non trouvé" });
             }
         }
 
         if (backlogId) {
-            const backlog = await getBacklogById(parseInt(backlogId));
+            const backlog = await checkBacklogExistence(parseInt(backlogId));
             if (!backlog) {
                 return res.status(404).json({ message: "Backlog non trouvé" });
             }
@@ -202,14 +202,14 @@ const closeSprint = async (req, res) => {
 
         console.log(`Sprint récupéré :`, sprint);
 
-        const project = await getProjectById(sprint.projectId);
+        const project = await checkProjectExistence(sprint.projectId);
         if (!project) {
             console.error(`Projet non trouvé pour l'ID ${sprint.projectId}`);
             return res.status(404).json({ error: 'Projet non trouvé' });
         }
         console.log(`Projet récupéré :`, project);
 
-        const backlog = await getBacklogById(sprint.backlogId);
+        const backlog = await checkBacklogExistence(sprint.backlogId);
         if (!backlog) {
             console.error(`Backlog non trouvé pour l'ID ${sprint.backlogId}`);
             return res.status(404).json({ error: 'Backlog non trouvé' });
@@ -269,7 +269,7 @@ const getProjectWithSprints = async (req, res) => {
     const { projectId } = req.params;
 
     try {
-        const project = await getProjectById(parseInt(projectId));
+        const project = await checkProjectExistence(parseInt(projectId));
         if (!project) {
             return res.status(404).json({ error: "Projet non trouvé" });
         }
@@ -286,7 +286,7 @@ const getBacklogWithSprints = async (req, res) => {
     const { backlogId } = req.params;
 
     try {
-        const backlog = await getBacklogById(parseInt(backlogId));
+        const backlog = await checkBacklogExistence(parseInt(backlogId));
         if (!backlog) {
             return res.status(404).json({ error: "backlog non trouvé" });
         }
