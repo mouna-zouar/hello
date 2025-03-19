@@ -1,35 +1,35 @@
 const express = require('express');
-const axios = require('axios');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+require('dotenv').config();
 const authMiddleware = require('./middleware/authMiddleware');
 
-require('dotenv').config();
+const authRoutes = require('./routes/auth.routes');
+const employeeRoutes = require('./routes/employee.routes');
+const teamRoutes = require('./routes/team.routes');
+const projectRoutes = require('./routes/project.routes');
+const backlogRoutes = require('./routes/backlog.routes');
+const sprintRoutes = require('./routes/sprint.routes');
+const taskRoutes = require('./routes/task.routes');
+const meetingRoutes = require('./routes/meeting.routes');
+const timeoffRoutes = require('./routes/timeoff.routes');
+const salaryRoutes = require('./routes/salary.routes');
 
 const app = express();
-app.use(authMiddleware);
 
-const port = process.env.PORT || 3003;
+app.use(express.json());
 
-app.use('/', createProxyMiddleware({
-    target: process.env.AUTH_SERVICE,
-    changeOrigin: true,
-    pathRewrite: {
-        '^/users': '/api/users',
-    },
-}));
+app.use('/auth', authRoutes);
 
-app.use('/', createProxyMiddleware({
-    target: process.env.EMPLOYEE_SERVICE,
-    changeOrigin: true,
-    pathRewrite: {
-        '^/employees': '/api/employees',
-    },
-}));
+app.use('/employees', authMiddleware, employeeRoutes);
+app.use('/teams', authMiddleware, teamRoutes);
+app.use('/projects', authMiddleware, projectRoutes);
+app.use('/backlogs', authMiddleware, backlogRoutes);
+app.use('/sprints', authMiddleware, sprintRoutes);
+app.use('/tasks', authMiddleware, taskRoutes);
+app.use('/meetings', authMiddleware, meetingRoutes);
+app.use('/timeoffs', authMiddleware, timeoffRoutes);
+app.use('/salaries', authMiddleware, salaryRoutes);
 
-app.all('*', (req, res) => {
-    res.status(404).json({ error: 'Route not found' });
-});
-
+const port = process.env.PORT || 3002;
 app.listen(port, () => {
     console.log(`API Gateway is running on port ${port}`);
 });
