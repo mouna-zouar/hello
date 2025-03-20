@@ -4,6 +4,8 @@ const taskRoutes = require('./Routes/taskRoutes');
 const dependencyRoutes = require('./Routes/dependencyRoutes');
 const {initKafkaRequestResponse} = require('./kafka/producers');
 const {startConsumer} = require('./kafka/consumer');
+const setupSwagger = require('./config/swagger');
+
 
 const app = express();
 const port = 3006;
@@ -11,6 +13,7 @@ const port = 3006;
 app.use(bodyParser.json());
 app.use('/api',dependencyRoutes);
 app.use('/api/tasks', taskRoutes);
+setupSwagger(app);
 
 initKafkaRequestResponse().then(() => {
     app.listen(port, async () => {

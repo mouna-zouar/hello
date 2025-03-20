@@ -8,6 +8,6 @@ router.post('/create',authMiddleware,checkPermission("Department", "CREATE"),dep
 router.get('/',authMiddleware,checkPermission("Department", "VIEW"), departmentController.getAllDepartments);
 router.put('/:id',authMiddleware,checkPermission("Department", "UPDATE"),departmentController.updateDepartment);
 router.delete('/:id',authMiddleware,checkPermission("Department", "DELETE"),departmentController.deleteDepartment);
-router.get('/departments/:id/with-roles', departmentController.getDepartmentWithRoles);
+router.get('/:id/with-roles', departmentController.getDepartmentWithRoles);
 
 module.exports = router;

@@ -6,7 +6,7 @@ const kafka = new Kafka({
     brokers: ['localhost:9092'],
 });
 
-const consumer = kafka.consumer({ groupId: 'employee-service-group' }); // Changez ici pour un groupId unique
+const consumer = kafka.consumer({ groupId: 'employee-service-group' });
 let producer;
 
 const startConsumer = async () => {
