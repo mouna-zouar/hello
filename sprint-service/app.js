@@ -2,14 +2,12 @@ const express = require('express');
 const sprintRoutes = require('./routes/sprintRoutes');
 const {initKafkaRequestResponse} = require('./kafka/producers');
 const {startConsumer} = require('./kafka/consumer');
-const setupSwagger = require('./config/swagger');
 
 
 const app = express();
 app.use(express.json());
 
 app.use('/api/sprints', sprintRoutes);
-setupSwagger(app);
 
 
 const PORT = process.env.PORT || 3007;

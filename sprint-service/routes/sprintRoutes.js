@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/',sprintController.createSprint);
 
-router.get('/',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getAllSprints);
+router.get('/',sprintController.getAllSprints);
 
 router.get('/:id', sprintController.getSprintById);
 

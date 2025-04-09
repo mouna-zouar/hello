@@ -46,7 +46,8 @@ const createSprint = async (req, res) => {
 const getAllSprints = async (req, res) => {
     try {
         const sprints = await prisma.sprint.findMany();
-        res.status(200).json(sprints);
+       // res.status(200).json(sprints);
+        res.status(200).json({ data: sprints });
     } catch (error) {
         console.error("Erreur lors de la récupération des sprints:", error);
         res.status(500).json({ message: "Erreur serveur" });
@@ -63,7 +64,8 @@ const getSprintById = async (req, res) => {
             return res.status(404).json({ message: "Sprint non trouvé" });
         }
 
-        res.status(200).json(sprint);
+        res.status(200).json({ data: sprint });
+
     } catch (error) {
         console.error("Erreur lors de la récupération du sprint:", error);
         res.status(500).json({ message: "Erreur serveur" });
