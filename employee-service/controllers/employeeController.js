@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { getUserById } = require('../services/userService');
 const { getTeamById } = require('../services/equipeService');
-const { checkUserExistence,checkTeamExistence } = require('../kafka/requestResponse');
+const { checkUserExistence,checkTeamExistence } = require('../kafka/producer');
 const {employeeSchema} = require("../validators/employeeValidator");
 
 const prisma = new PrismaClient();
@@ -43,7 +43,8 @@ const createEmployee = async (req, res) => {
             }
         }
 
-        const newEmployee = await prisma.employee.create({
+        const newEmployee = await prisma.employee.create(
+            {
             data: {
                 id: userId,
                 position,
@@ -65,7 +66,7 @@ const createEmployee = async (req, res) => {
 const getAllEmployees = async (req, res) => {
     try {
         const employees = await prisma.employee.findMany();
-        res.status(200).json(employees);
+        res.status(200).json({data:employees});
     } catch (error) {
         console.error(" Erreur lors de la récupération des employés:", error);
         res.status(500).json({ error: "Erreur serveur" });
@@ -84,7 +85,7 @@ const getEmployeeById = async (req, res) => {
             return res.status(404).json({ error: "employee non trouvée" });
         }
 
-        res.status(200).json(employee);
+        res.status(200).json({data:employee});
     } catch (error) {
         console.error('Erreur lors de la récupération de l\'employee:', error);
         res.status(500).json({ error: "Erreur serveur lors de la récupération de l'employee" });
@@ -155,12 +156,11 @@ const deleteEmployee = async (req, res) => {
 
 const getEmployeesByTeamId = async (req, res) => {
     const { teamId } = req.query;
-
     try {
         const employees = await prisma.employee.findMany({
             where: {
-                teamId: parseInt(teamId, 10)
-            }
+                teamId: parseInt(teamId, 10),
+            },
         });
 
         res.status(200).json(employees);

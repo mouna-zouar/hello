@@ -9,17 +9,17 @@ const router = express.Router();
 
 router.post('/', employeeController.createEmployee);
 
-router.get('/', authMiddleware, checkPermission("Employee", "VIEW"), employeeController.getAllEmployees);
+router.get('/',  employeeController.getAllEmployees);
 
-router.get('/:employeeId', employeeController.getEmployeeById);
+router.get('/employee/:id', employeeController.getEmployeeById);
 
-router.put('/:id', authMiddleware, checkPermission("Employee", "UPDATE"), employeeController.updateEmployee);
+router.put('/:id', employeeController.updateEmployee);
 
-router.delete('/:id', authMiddleware, checkPermission("Employee", "DELETE"), employeeController.deleteEmployee);
+router.delete('/:id', employeeController.deleteEmployee);
 
-router.get('/team/employee', authMiddleware, checkPermission("Employee", "VIEW"), employeeController.getEmployeesByTeamId);
+router.get('/team', employeeController.getEmployeesByTeamId);
 
-router.put('/assign/:employeeId/:teamId', authMiddleware, checkPermission("Employee", "UPDATE"), async (req, res) => {
+router.put('/assign/:employeeId/:teamId', async (req, res) => {
     const { employeeId, teamId } = req.params;
 
     try {
