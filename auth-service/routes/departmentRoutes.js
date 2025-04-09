@@ -4,10 +4,12 @@ const departmentController = require('../controllers/departmentController');
 const checkPermission = require("../middlewares/check");
 const authMiddleware = require("../middlewares/authMiddleware");
 
-router.post('/create',authMiddleware,checkPermission("Department", "CREATE"),departmentController.createDepartment);
-router.get('/',authMiddleware,checkPermission("Department", "VIEW"), departmentController.getAllDepartments);
-router.put('/:id',authMiddleware,checkPermission("Department", "UPDATE"),departmentController.updateDepartment);
-router.delete('/:id',authMiddleware,checkPermission("Department", "DELETE"),departmentController.deleteDepartment);
+router.post('/',departmentController.createDepartment);
+router.get('/',departmentController.getAllDepartments);
+router.get('/:id',departmentController.getDepartmentById);
+
+router.put('/:id',departmentController.updateDepartment);
+router.delete('/:id',departmentController.deleteDepartment);
 router.get('/:id/with-roles', departmentController.getDepartmentWithRoles);
 
 module.exports = router;

@@ -188,7 +188,6 @@ const getSprintWithTasks = async (req, res) => {
     }
 };
 
-
 const closeSprint = async (req, res) => {
     const { id } = req.params;
 
@@ -284,7 +283,6 @@ const getProjectWithSprints = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la récupération du projet et de ses sprints" });
     }
 };
-
 
 const getBacklogWithSprints = async (req, res) => {
     const { backlogId } = req.params;

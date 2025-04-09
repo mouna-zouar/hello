@@ -19,7 +19,7 @@ router.post("/login", authLimiter, userController.login);
 
 // Utilisateurs
 
-router.get("/", authMiddleware,checkPermission("User", "VIEW"), async (req, res) => {
+router.get("/",  async (req, res) => {
     try {
         await userController.getAllUsers(req, res);
     } catch (error) {
@@ -28,11 +28,11 @@ router.get("/", authMiddleware,checkPermission("User", "VIEW"), async (req, res)
     }
 });
 router.get("/:id", userController.getUserById);
-router.delete("/:id", authMiddleware,checkPermission("User", "DELETE"), userController.deleteUser);
+router.delete("/:id", userController.deleteUser);
 router.post("/verify", userController.verifyTokenAndPermissions);
 router.put('/:id', userController.updateUser);
 
 //Session
-router.get("/sessions/:userId", authMiddleware, userController.getUserSessions);
+router.get("/sessions/:userId",userController.getUserSessions);
 
 module.exports = router;

@@ -130,7 +130,7 @@ const getAllUsers = async (req, res) => {
     }
 };
 
-/*const getUserById = async (req, res) => {
+const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
         const user = await prisma.user.findUnique({
@@ -155,16 +155,17 @@ const getAllUsers = async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: "Utilisateur non trouvé" });
         }
+        res.status(200).json({ data: user });
 
-        return res.status(200).json(user);
+        //return res.status(200).json(user);
     } catch (error) {
         console.error("Erreur lors de la récupération de l'utilisateur:", error);
         return res.status(500).json({ error: "Une erreur est survenue" });
     }
 };
-*/
 
-const getUserById = async (id) => {
+
+/*const getUserById = async (id) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: parseInt(id) },
@@ -188,7 +189,8 @@ const getUserById = async (id) => {
         console.error("Erreur dans findUserById:", error);
         return { error: "Erreur interne" };
     }
-};
+};*/
+
 const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;

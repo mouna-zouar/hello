@@ -18,11 +18,34 @@ const createDepartment = async (req, res) => {
     }
 };
 
+const getDepartmentById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const department = await prisma.department.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!department) {
+            return res.status(404).json({ error: "department non trouvé" });
+        }
+        res.status(200).json({ data: department });
+
+        //res.status(200).json(department);
+    } catch (error) {
+        console.error('Erreur lors de la récupération du department:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération du department" });
+    }
+};
+
+
 const getAllDepartments = async (req, res) => {
 
     try {
         const departments = await prisma.department.findMany();
-        res.json(departments);
+        res.status(200).json({ data: departments });
+
+        //res.json(departments);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Erreur serveur lors de la récupération des départements" });
@@ -93,5 +116,6 @@ module.exports = {
     getAllDepartments,
     updateDepartment,
     deleteDepartment,
-    getDepartmentWithRoles
+    getDepartmentWithRoles,
+    getDepartmentById
 };
