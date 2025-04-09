@@ -73,7 +73,7 @@ const createTeam = async (req, res) => {
 const getAllTeams = async (req, res) => {
     try {
         const teams = await prisma.team.findMany();
-        res.status(200).json(teams);
+        res.status(200).json({data:teams});
     } catch (error) {
         console.error('Erreur lors de la récupération des équipes:', error);
         res.status(500).json({ error: "Erreur serveur lors de la récupération des équipes" });
@@ -92,7 +92,7 @@ const getTeamById = async (req, res) => {
             return res.status(404).json({ error: "Équipe non trouvée" });
         }
 
-        res.status(200).json(team);
+        res.status(200).json({data:team});
     } catch (error) {
         console.error('Erreur lors de la récupération de l\'équipe:', error);
         res.status(500).json({ error: "Erreur serveur lors de la récupération de l'équipe" });

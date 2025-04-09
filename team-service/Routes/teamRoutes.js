@@ -4,7 +4,7 @@ const checkPermission = require("../middlewares/check");
 const authMiddleware = require("../middlewares/authMiddleware");
 const router = express.Router();
 
-router.get('/:teamId/employees', authMiddleware, checkPermission("Team", "VIEW"), teamController.getEmployeesByTeamId);
+router.get('/:teamId/employees', teamController.getEmployeesByTeamId);
 
 router.post('/', teamController.createTeam);
 
@@ -12,12 +12,12 @@ router.get('/', teamController.getAllTeams);
 
 router.get('/:teamId', teamController.getTeamById);
 
-router.put('/:teamId', authMiddleware, checkPermission("Team", "UPDATE"), teamController.updateTeam);
+router.put('/:teamId',  teamController.updateTeam);
 
-router.delete('/:teamId', authMiddleware, checkPermission("Team", "DELETE"), teamController.deleteTeam);
+router.delete('/:teamId', teamController.deleteTeam);
 
-router.get('/search', authMiddleware, checkPermission("Team", "VIEW"), teamController.searchTeamByName);
+router.get('/search', teamController.searchTeamByName);
 
-router.put('/assign/:employeeId/:teamId', authMiddleware, checkPermission("Team", "UPDATE"), teamController.assignEmployeeToTeam);
+router.put('/assign/:employeeId/:teamId',teamController.assignEmployeeToTeam);
 
 module.exports = router;
