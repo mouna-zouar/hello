@@ -36,7 +36,8 @@ const createSprint = async (req, res) => {
             }
         });
 
-        res.status(201).json({ message: "Sprint créé avec succès", sprint });
+        //res.status(201).json({ message: "Sprint créé avec succès", sprint });
+        res.status(200).json({ message: "Sprint créé avec succès",data: sprint });
     } catch (error) {
         console.error('Erreur lors de la création du sprint:', error);
         res.status(500).json({ message: 'Erreur serveur' });
