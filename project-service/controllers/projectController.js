@@ -39,7 +39,9 @@ const createProject = async (req, res) => {
 const getAllProjects = async (req, res) => {
     try {
         const projects = await prisma.project.findMany();
-        res.json(projects);
+       // res.json(projects);
+        res.status(200).json({data:projects});
+
     } catch (error) {
         console.error('Erreur lors de la récupération des projets:', error);
         res.status(500).json({ message: 'Erreur lors de la récupération des projets' });
@@ -57,8 +59,9 @@ const getProjectById = async (req, res) => {
         if (!project) {
             return res.status(404).json({ message: 'Projet non trouvé' });
         }
+        res.status(200).json({data:project});
 
-        res.json(project);
+        //res.json(project);
     } catch (error) {
         console.error('Erreur lors de la récupération du projet:', error);
         res.status(500).json({ message: 'Erreur serveur lors de la récupération du projet' });

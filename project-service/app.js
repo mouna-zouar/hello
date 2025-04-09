@@ -2,7 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { initKafkaRequestResponse } = require('./kafka/producers');
 const{startConsumer} = require('./kafka/consumer');
-const setupSwagger = require('./config/swagger');
 
 require('dotenv').config();
 
@@ -15,7 +14,6 @@ const port = process.env.PORT || 3004;
 app.use(bodyParser.json());
 app.use('/api/projects', projectRoutes);
 app.use('/api/projectEmployee', projectEmployeeRoutes);
-setupSwagger(app);
 
 initKafkaRequestResponse().then(() => {
     app.listen(port, async () => {

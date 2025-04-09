@@ -5,7 +5,7 @@ const checkPermission = require("../middlewares/check");
 const authMiddleware = require("../middlewares/authMiddleware");
 router.post('/',projectEmployeeController.createProjectEmployeeRelation);
 
-router.get('/:projectId/employees',authMiddleware, checkPermission("projectEmployee", "VIEW"), projectEmployeeController.getEmployeesByProjectId);
+router.get('/:projectId/employees', projectEmployeeController.getEmployeesByProjectId);
 
 
 module.exports = router;
