@@ -2,12 +2,15 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const produceEvent = require('../kafka/kafkaProducer');
 const EVENTS = require('../constants/events');
+
 exports.getAllRoles = async (req, res) => {
     try {
         const roles = await prisma.role.findMany({
             include: { department: true, permissions: true }
         });
-        res.json(roles);
+        res.status(200).json({ data: roles });
+
+       // res.json(roles);
     } catch (error) {
         res.status(500).json({ error: "Erreur lors de la récupération des rôles" });
     }
@@ -77,8 +80,16 @@ exports.getRoleWithUsers = async (req, res) => {
 };
 
 exports.assignUserToRole = async (req, res) => {
-    const { userId, roleId } = req.body;
     try {
+        console.log("Body reçu :", req.body);
+
+        const userId = parseInt(req.body.userId);
+        const roleId = parseInt(req.body.roleId);
+
+        if (isNaN(userId) || isNaN(roleId)) {
+            return res.status(400).json({ error: "userId ou roleId invalide ou manquant" });
+        }
+
         const user = await prisma.user.findUnique({ where: { id: userId } });
         const role = await prisma.role.findUnique({ where: { id: roleId } });
 
@@ -88,9 +99,7 @@ exports.assignUserToRole = async (req, res) => {
 
         const updatedUser = await prisma.user.update({
             where: { id: userId },
-            data: {
-                roleId: roleId,
-            }
+            data: { roleId },
         });
 
         res.status(200).json({ message: "Utilisateur assigné au rôle avec succès", updatedUser });
@@ -99,3 +108,24 @@ exports.assignUserToRole = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de l'assignation du rôle" });
     }
 };
+
+exports.getRoleById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const role = await prisma.role.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!role) {
+            return res.status(404).json({ error: "role non trouvé" });
+        }
+        res.status(200).json({ data: role });
+
+        //res.status(200).json(role);
+    } catch (error) {
+        console.error('Erreur lors de la récupération du role:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération du role" });
+    }
+};
+

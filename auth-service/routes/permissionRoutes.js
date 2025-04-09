@@ -5,12 +5,15 @@ const permissionController = require('../controllers/permissionController');
 const checkPermission = require("../middlewares/check");
 const authMiddleware = require("../middlewares/authMiddleware");
 
-router.post('/create', authMiddleware,checkPermission("Permission", "CREATE"), permissionController.createPermission);
+router.post('/', permissionController.createPermission);
 
-router.get('/',  authMiddleware,checkPermission("Permission", "VIEW"),permissionController.getAllPermissions);
+router.get('/',  permissionController.getAllPermissions);
+router.get('/:id', permissionController.getPermissionById);
 
-router.put('/:id', authMiddleware,checkPermission("Permission", "UPDATE"), permissionController.updatePermission);
 
-router.delete('/:id', authMiddleware,checkPermission("Permission", "DELETE"), permissionController.deletePermission);
+router.put('/:id', permissionController.updatePermission);
+
+
+router.delete('/:id', permissionController.deletePermission);
 
 module.exports = router;

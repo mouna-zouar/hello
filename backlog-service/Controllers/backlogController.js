@@ -36,7 +36,9 @@ const createBacklog = async (req, res) => {
 const getAllBacklogs = async (req, res) => {
     try {
         const backlogs = await prisma.backlog.findMany();
-        res.status(200).json(backlogs);
+        //res.status(200).json(backlogs);
+        res.status(200).json({ data: backlogs });
+
     } catch (error) {
         console.error('Erreur lors de la récupération des backlogs:', error);
         res.status(500).json({ error: "Erreur serveur lors de la récupération des backlogs" });
@@ -54,8 +56,9 @@ const getBacklogById = async (req, res) => {
         if (!backlog) {
             return res.status(404).json({ error: "Backlog non trouvé" });
         }
+        res.status(200).json({ data: backlog });
 
-        res.status(200).json(backlog);
+        //res.status(200).json(backlog);
     } catch (error) {
         console.error('Erreur lors de la récupération du backlog:', error);
         res.status(500).json({ error: "Erreur serveur lors de la récupération du backlog" });

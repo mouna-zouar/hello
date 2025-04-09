@@ -22,7 +22,9 @@ const createPermission = async (req, res) => {
 const getAllPermissions = async (req, res) => {
     try {
         const permissions = await prisma.permission.findMany();
-        res.json(permissions);
+       // res.json(permissions);
+        res.status(200).json({ data: permissions });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Erreur serveur lors de la récupération des permissions" });
@@ -57,7 +59,7 @@ const deletePermission = async (req, res) => {
             where: { id: parseInt(id) },
         });
 
-        await produceEvent(EVENTS.PERMISSION_DELETED, permissionToDelete);
+       // await produceEvent(EVENTS.PERMISSION_DELETED, permissionToDelete);
 
         res.status(200).json({ message: 'Permission supprimée avec succès' });
     } catch (error) {
@@ -66,9 +68,31 @@ const deletePermission = async (req, res) => {
     }
 };
 
+const getPermissionById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const permission = await prisma.permission.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!permission) {
+            return res.status(404).json({ error: "permission non trouvé" });
+        }
+        res.status(200).json({ data: permission });
+
+        //res.status(200).json(permission);
+    } catch (error) {
+        console.error('Erreur lors de la récupération du permission:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération du permission" });
+    }
+};
+
+
 module.exports = {
     createPermission,
     getAllPermissions,
     updatePermission,
-    deletePermission
+    deletePermission,
+    getPermissionById
 };

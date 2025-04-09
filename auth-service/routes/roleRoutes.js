@@ -5,16 +5,17 @@ const authMiddleware = require("../middlewares/authMiddleware");
 
 const router = express.Router();
 
-router.get('/', authMiddleware,checkPermission("Role", "VIEW"), roleController.getAllRoles);
+router.get('/',  roleController.getAllRoles);
+router.get('/:id',roleController.getRoleById);
 
-router.post('/', authMiddleware,checkPermission("Role", "CREATE"), roleController.createRole);
+router.post('/', roleController.createRole);
 
-router.put('/:id', authMiddleware,checkPermission("Role", "UPDATE"), roleController.updateRole);
+router.put('/:id', roleController.updateRole);
 
-router.delete('/:id', authMiddleware,checkPermission("RolePermission", "DELETE"), roleController.deleteRole);
+router.delete('/:id', roleController.deleteRole);
 
-router.get('/roles/:id/with-users', roleController.getRoleWithUsers);
+router.get('/:id/with-users', roleController.getRoleWithUsers);
 
-router.post('/roles/assign', roleController.assignUserToRole);
+router.post('/assign', roleController.assignUserToRole);
 
 module.exports = router;
