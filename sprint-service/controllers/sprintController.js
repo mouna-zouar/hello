@@ -171,7 +171,6 @@ const getSprintWithTasks = async (req, res) => {
     const { id } = req.params;
 
     try {
-        // Récupérer le sprint
         const sprint = await prisma.sprint.findUnique({
             where: { id: parseInt(id) }
         });
@@ -180,10 +179,8 @@ const getSprintWithTasks = async (req, res) => {
             return res.status(404).json({ error: 'Sprint non trouvé' });
         }
 
-        // Récupérer les tâches associées via `taskService.js`
         const tasks = await getTasksBySprintId(id);
 
-        // Ajouter les tâches à l'objet sprint et renvoyer la réponse
         res.json({ ...sprint, tasks });
     } catch (error) {
         console.error('Erreur lors de la récupération du sprint et de ses tâches:', error);
@@ -278,14 +275,17 @@ const getProjectWithSprints = async (req, res) => {
             return res.status(404).json({ error: "Projet non trouvé" });
         }
 
-        const tasks = await prisma.sprint.findMany({ where: { projectId: parseInt(projectId) } });
+        const sprints = await prisma.sprint.findMany({ where: { projectId: parseInt(projectId) } });
 
-        res.status(200).json({ project, tasks });
+        res.status(200).json({ sprints: sprints });
+
     } catch (error) {
-        console.error("Erreur lors de la récupération du projet et de ses tâches :", error);
-        res.status(500).json({ error: "Erreur serveur lors de la récupération du projet et de ses tâches" });
+        console.error("Erreur lors de la récupération du projet et de ses sprints :", error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération du projet et de ses sprints" });
     }
 };
+
+
 const getBacklogWithSprints = async (req, res) => {
     const { backlogId } = req.params;
 
@@ -297,7 +297,7 @@ const getBacklogWithSprints = async (req, res) => {
 
         const sprints = await prisma.sprint.findMany({ where: { backlogId: parseInt(backlogId) } });
 
-        res.status(200).json({ backlog, sprints });
+        res.status(200).json({ sprints: sprints });
     } catch (error) {
         console.error("Erreur lors de la récupération du backlog et de ses sprints :", error);
         res.status(500).json({ error: "Erreur serveur lors de la récupération du backlog et de ses sprints" });

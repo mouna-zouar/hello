@@ -10,17 +10,17 @@ router.get('/',sprintController.getAllSprints);
 
 router.get('/:id', sprintController.getSprintById);
 
-router.put('/:id', authMiddleware, checkPermission("Sprint", "UPDATE"),sprintController.updateSprint);
+router.put('/:id', sprintController.updateSprint);
 
-router.delete('/:id',authMiddleware, checkPermission("Sprint", "DELETE"), sprintController.deleteSprint);
-router.get('/sprints/:id',authMiddleware, checkPermission("Sprint", "VIEW"),sprintController.getSprintWithTasks);
-router.get('/project/:projectId/sprints',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getProjectWithSprints);
-router.get('/backlog/:backlogId/sprints',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getBacklogWithSprints);
-router.put('/:id/close', authMiddleware, checkPermission("Sprint", "UPDATE"),sprintController.closeSprint);
-router.patch('/:id/open', authMiddleware, checkPermission("Sprint", "UPDATE"),sprintController.openSprint);
+router.delete('/:id', sprintController.deleteSprint);
+router.get('/tasks/:id',sprintController.getSprintWithTasks);
+router.get('/project/:projectId/sprints', sprintController.getProjectWithSprints);
+router.get('/backlog/:backlogId/sprints', sprintController.getBacklogWithSprints);
+router.put('/:id/close', sprintController.closeSprint);
+router.patch('/:id/open',sprintController.openSprint);
 
-router.get('/project/:projectId',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getSprintsByProjectId);
-router.get('/backlog/:backlogId',authMiddleware, checkPermission("Sprint", "VIEW"), sprintController.getSprintsBybacklogId);
+router.get('/project/:projectId', sprintController.getSprintsByProjectId);
+router.get('/backlog/:backlogId',sprintController.getSprintsBybacklogId);
 
 
 
