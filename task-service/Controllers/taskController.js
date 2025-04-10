@@ -47,9 +47,7 @@ const createTask = async (req, res) => {
 
         res.status(201).json({ message: "Tâche créée avec succès", task: newTask });
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            return res.status(400).json({ error: error.errors });
-        }
+
         console.error('Erreur lors de la création de la tâche:', error);
         res.status(500).json({ error: 'Erreur serveur lors de la création de la tâche.' });
     }
@@ -58,7 +56,7 @@ const createTask = async (req, res) => {
 const getAllTasks = async (req, res) => {
     try {
         const tasks = await prisma.task.findMany();
-        res.status(200).json(tasks);
+        res.status(200).json({data:tasks});
     } catch (error) {
         console.error('Erreur lors de la récupération des tâches:', error);
         res.status(500).json({ error: "Erreur serveur lors de la récupération des tâches" });
@@ -75,7 +73,7 @@ const getTaskById = async (req, res) => {
             return res.status(404).json({ error: "Tâche non trouvée" });
         }
 
-        res.status(200).json(task);
+        res.status(200).json({data:task});
     } catch (error) {
         console.error('Erreur lors de la récupération de la tâche:', error);
         res.status(500).json({ error: "Erreur serveur lors de la récupération de la tâche" });
@@ -108,9 +106,7 @@ const updateTask = async (req, res) => {
 
         res.status(200).json({ message: 'Tâche mise à jour avec succès', task: updatedTask });
     } catch (error) {
-        if (error instanceof z.ZodError) {
-            return res.status(400).json({ error: error.errors });
-        }
+
         console.error('Erreur lors de la mise à jour de la tâche:', error);
         res.status(500).json({ error: 'Erreur serveur lors de la mise à jour de la tâche.' });
     }
