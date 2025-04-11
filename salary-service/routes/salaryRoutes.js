@@ -10,6 +10,5 @@ router.put('/base/:employeeId', salaryController.updateBaseSalary);
 
 router.post('/calculateTotal', salaryController.calculateTotalSalary);
 
-router.get('/employee/:employeeId/with-salary', salaryController.getEmployeeWithSalary);
 
 module.exports = router;

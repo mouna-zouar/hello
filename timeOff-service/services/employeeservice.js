@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const getEmployeeById = async (employeeId) => {
     try {
-        const url = `http://localhost:3012/employees/${employeeId}`;
+        const url = `http://localhost:3012/api/employees/employee/${employeeId}`;
         console.log(`🔍 Requête envoyée à : ${url}`);
         const response = await axios.get(url);
         if (response.data) {

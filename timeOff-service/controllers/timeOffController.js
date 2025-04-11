@@ -1,6 +1,6 @@
 const { PrismaClient, TimeOffStatus, TimeOffType } =require ('@prisma/client');
 const { getEmployeeById } =require ('../services/employeeservice');
-const {createTimeOffSchema} = require("../validators/timeOffSchema");
+const {createTimeOffSchema,updateTimeOffSchema} = require("../validators/timeOffSchema");
 
 const prisma = new PrismaClient();
 

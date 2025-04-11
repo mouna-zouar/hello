@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 require('dotenv').config();
 const salaryRoutes = require('./routes/salaryRoutes');
 const {initKafkaRequestResponse} = require('./kafka/producers');
+
 const app = express();
 const port = process.env.PORT;
 app.use(bodyParser.json());

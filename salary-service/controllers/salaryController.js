@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 const { getEmployeeById } = require('../services/employeeservice');
 const { getTasksByEmployee } = require('../services/taskservice');
 const {checkEmployeeExistence} = require('../kafka/producers');
-const {salarySchema} = require("../validators/salarySchema");
+const salarySchema = require("../validators/salarySchema");
 
 const getSalary = async (req, res) => {
     const { employeeId } = req.params;
@@ -21,7 +21,7 @@ const getSalary = async (req, res) => {
 
         const salary = salaries[0];
 
-        res.status(200).json(salary);
+        res.status(200).json({data:salary});
     } catch (error) {
         console.error('Erreur lors de la récupération du salaire :', error.message);
         res.status(500).json({ error: 'Erreur serveur' });
@@ -155,6 +155,5 @@ module.exports = {
     getSalary,
     calculateTotalSalary,
     createBaseSalary,
-    updateBaseSalary,
-    getEmployeeWithSalary
+    updateBaseSalary
 };

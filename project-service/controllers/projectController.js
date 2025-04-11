@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const {getTeamById} = require ("../services/equipeService");
+const {getBacklogById} = require ("../services/backlogService");
 const { checkTeamExistence ,checkBacklogExistence} = require('../kafka/producers');
 const {projectSchema} = require("../validators/projectSchema");
 
@@ -12,7 +13,7 @@ const createProject = async (req, res) => {
             return res.status(400).json({ error: parsed.error.errors });
         }
 
-        if (teamId) {
+        /*if (teamId) {
             const { exists: teamExists } = await checkTeamExistence(teamId);
             if (!teamExists) {
                 return res.status(404).json({ error: "Équipe non trouvée via Kafka." });
@@ -24,6 +25,14 @@ const createProject = async (req, res) => {
             if (!backlogExists) {
                 return res.status(404).json({ error: "Backlog non trouvé via Kafka." });
             }
+        }*/
+        const team = await getTeamById(teamId);
+        if (!team) {
+            return res.status(404).json({ error: 'team introuvable.' });
+        }
+        const backlog = await getBacklogById(backlogId);
+        if (!backlog) {
+            return res.status(404).json({ error: 'backlog introuvable.' });
         }
         console.log("📦 Requête reçue avec body :", req.body);
 
