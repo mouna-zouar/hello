@@ -9,8 +9,8 @@ const {
 } = require('../controllers/participantController');
 
 router.post('/', addParticipant);
-router.delete('/:id',authMiddleware, checkPermission("Participant", "DELETE"),deleteParticipant);
+router.delete('/:id',deleteParticipant);
 
-router.get('/:meetingId',authMiddleware, checkPermission("Participant", "VIEW"), getMeetingParticipants);
+router.get('/:meetingId', getMeetingParticipants);
 
 module.exports = router;

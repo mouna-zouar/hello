@@ -56,7 +56,7 @@ const getEmployeesByProjectId = async (req, res) => {
         }
 
         const employeePromises = projectEmployees.map(async (projectEmployee) => {
-            const employeeResponse = await axios.get(`http://localhost:3002/employees/${projectEmployee.employeeId}`);
+            const employeeResponse = await axios.get(`http://localhost:3012/api/employees/employee/${projectEmployee.employeeId}`);
             return employeeResponse.data;
         });
 

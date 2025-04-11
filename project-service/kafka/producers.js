@@ -6,29 +6,45 @@ const kafka = new Kafka({
 });
 
 const producer = kafka.producer();
-const consumer = kafka.consumer({ groupId: 'project-service-group' }); // Changez ici pour un groupId unique
+const consumer = kafka.consumer({ groupId: 'project-service-group2' }); // Changez ici pour un groupId unique
 
 const pendingEmployeeRequests = new Map();
 const pendingTeamRequests = new Map();
+const pendingBacklogRequests = new Map();
+
 
 
 const initKafkaRequestResponse = async () => {
     await producer.connect();
     await consumer.connect();
     await consumer.subscribe({ topic: 'employee-existence-response', fromBeginning: false }); // Changer ici le topic
+    await consumer.subscribe({ topic: 'team-existence-response', fromBeginning: false }); // Abonnement au topic de réponse de l'équipe
+    await consumer.subscribe({ topic: 'backlog-existence-response', fromBeginning: false });
 
     await consumer.run({
         eachMessage: async ({ message }) => {
             const parsed = JSON.parse(message.value.toString());
-            const { correlationId, employeeId, exists } = parsed;
+            const { correlationId, exists } = parsed;
 
             if (parsed.employeeId !== undefined && parsed.exists !== undefined) {
                 const resolve = pendingEmployeeRequests.get(correlationId);
                 if (resolve) {
-                    resolve({ employeeId, exists });
+                    resolve({ employeeId:parsed.employeeId, exists: parsed.exists });
                     pendingEmployeeRequests.delete(correlationId);
                 }
             }
+
+
+            if (parsed.backlogId !== undefined && parsed.exists !== undefined) {
+                const resolve = pendingBacklogRequests.get(correlationId);
+                console.log("📥 Message complet reçu pour backlog-existence-response:", parsed);
+
+                if (resolve) {
+                    resolve({ backlogId: parsed.backlogId, exists: parsed.exists });
+                     pendingBacklogRequests.delete(correlationId);
+                }
+            }
+
             if (parsed.teamId !== undefined && parsed.exists !== undefined) {
                 const resolve = pendingTeamRequests.get(correlationId);
                 if (resolve) {
@@ -56,12 +72,16 @@ const checkEmployeeExistence = async (employeeId) => {
 
     return responsePromise;
 };
+
 const checkTeamExistence = async (teamId) => {
     const correlationId = uuidv4();
     const payload = { teamId, correlationId };
 
     const responsePromise = new Promise((resolve) => {
-        pendingTeamRequests.set(correlationId, resolve);
+        pendingTeamRequests.set(correlationId, (result) => {
+            console.log("✅ Réponse reçue pour checkTeamExistence:", result);
+            resolve(result);
+        });
     });
 
     await producer.send({
@@ -69,8 +89,32 @@ const checkTeamExistence = async (teamId) => {
         messages: [{ value: JSON.stringify(payload) }],
     });
 
+    console.log("📤 Demande envoyée (team-existence-check):", payload);
+
     return responsePromise;
 };
+
+const checkBacklogExistence = async (backlogId) => {
+    const correlationId = uuidv4();
+    const payload = { backlogId, correlationId };
+
+    const responsePromise = new Promise((resolve) => {
+        pendingBacklogRequests.set(correlationId, (result) => {
+            console.log("✅ Réponse reçue pour checkBacklogExistence:", result);
+            resolve(result);
+        });
+    });
+
+    await producer.send({
+        topic: 'get-backlog-by-id',
+        messages: [{ value: JSON.stringify(payload) }],
+    });
+
+    console.log("📤 Demande envoyée (get-backlog-by-id):", payload);
+
+    return responsePromise;
+};
+
 
 const closeKafkaConnection = async () => {
     await producer.disconnect();
@@ -80,6 +124,7 @@ const closeKafkaConnection = async () => {
 module.exports = {
     initKafkaRequestResponse,
     checkEmployeeExistence,
+    checkBacklogExistence,
     closeKafkaConnection,
     checkTeamExistence
 };

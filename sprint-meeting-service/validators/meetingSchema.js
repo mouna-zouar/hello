@@ -4,7 +4,7 @@ const sprintMeetingSchema = z.object({
     sprintId: z.number().int().positive(),
     meetingDate: z.string().min(1),
     agenda: z.string().min(1),
-    participants: z.array(z.string()),
+    participants: z.array(z.string()).optional(),
     taskId: z.number().int().positive(),
     projectId: z.number().int().positive(),
     onlineMeetingLink: z.string().optional(),

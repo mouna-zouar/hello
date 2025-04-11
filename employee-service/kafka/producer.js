@@ -58,11 +58,9 @@ const checkUserExistence = async (userId) => {
 
     return responsePromise;
 };
-
 const checkTeamExistence = async (teamId) => {
     const correlationId = uuidv4();
     const payload = { teamId, correlationId };
-
 
     const responsePromise = new Promise((resolve) => {
         pendingTeamRequests.set(correlationId, (result) => {
@@ -70,10 +68,13 @@ const checkTeamExistence = async (teamId) => {
             resolve(result);
         });
     });
+
     await producer.send({
         topic: 'team-existence-check',
         messages: [{ value: JSON.stringify(payload) }],
     });
+
+    console.log("📤 Demande envoyée (team-existence-check):", payload);
 
     return responsePromise;
 };

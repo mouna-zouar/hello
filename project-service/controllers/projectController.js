@@ -1,13 +1,13 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const {getTeamById} = require ("../services/equipeService");
-const { checkTeamExistence } = require('../kafka/producers');
+const { checkTeamExistence ,checkBacklogExistence} = require('../kafka/producers');
 const {projectSchema} = require("../validators/projectSchema");
 
 const createProject = async (req, res) => {
-    const { name, description, type, teamId, status } = req.body;
+    const { name, description, type, teamId, status,backlogId } = req.body;
     try {
-        const parsed = projectSchema.safeParse({ name, description, type, teamId, status });
+        const parsed = projectSchema.safeParse({ name, description, type, teamId, status,backlogId });
         if (!parsed.success) {
             return res.status(400).json({ error: parsed.error.errors });
         }
@@ -18,6 +18,15 @@ const createProject = async (req, res) => {
                 return res.status(404).json({ error: "Équipe non trouvée via Kafka." });
             }
         }
+        if (backlogId) {
+            console.log("➡️ backlogId reçu :", backlogId);
+            const { exists: backlogExists } = await checkBacklogExistence(backlogId);
+            if (!backlogExists) {
+                return res.status(404).json({ error: "Backlog non trouvé via Kafka." });
+            }
+        }
+        console.log("📦 Requête reçue avec body :", req.body);
+
 
         const newProject = await prisma.project.create({
             data: {
@@ -25,6 +34,7 @@ const createProject = async (req, res) => {
                 description,
                 type,
                 teamId,
+                backlogId,
                 status: status || "ONGOING"
             },
         });
@@ -70,26 +80,46 @@ const getProjectById = async (req, res) => {
 
 const updateProject = async (req, res) => {
     const { id } = req.params;
-    const { name, description, type, teamId } = req.body;
+    const { name, description, type, status, backlogId, teamId } = req.body;
 
     try {
-        const parsed = projectSchema.safeParse({ name, description, type, teamId });
+        // Valider les données avec Zod
+        const parsed = projectSchema.safeParse({ name, description, type, teamId, status, backlogId });
         if (!parsed.success) {
             return res.status(400).json({ error: parsed.error.errors });
         }
 
+        // Vérifier si l'équipe existe
         const team = await checkTeamExistence(teamId);
         if (!team) {
             return res.status(404).json({ error: "L'équipe avec l'ID fourni n'a pas été trouvée." });
         }
 
+        // Vérifier si le backlog existe
+        const backlog = await checkBacklogExistence(backlogId);
+        if (!backlog) {
+            return res.status(404).json({ error: "Backlog avec l'ID fourni n'a pas été trouvée." });
+        }
+
+        // Vérifier si le projet existe avant la mise à jour
+        const existingProject = await prisma.project.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!existingProject) {
+            return res.status(404).json({ error: "Projet avec l'ID fourni non trouvé." });
+        }
+
+        // Mise à jour du projet
         const updatedProject = await prisma.project.update({
             where: { id: parseInt(id) },
             data: {
                 name,
                 description,
                 type,
-                teamId
+                teamId,
+                status,
+                backlogId
             },
         });
 

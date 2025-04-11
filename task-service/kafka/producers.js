@@ -35,11 +35,13 @@ const initKafkaRequestResponse = async () => {
 
                 if (topic === 'backlog-existence-response') {
                     const resolve = pendingBacklogRequests.get(correlationId);
+                    console.log("📥 Message complet reçu pour backlog-existence-response:", parsed);
                     if (resolve) {
                         resolve({ backlogId: parsed.backlogId, exists });
                         pendingBacklogRequests.delete(correlationId);
                     }
                 }
+
 
                 if (topic === 'project-existence-response') {
                     const resolve = pendingProjectRequests.get(correlationId);
@@ -77,16 +79,18 @@ const checkBacklogExistence = async (backlogId) => {
     const payload = { backlogId, correlationId };
 
     const responsePromise = new Promise((resolve) => {
-        pendingBacklogRequests.set(correlationId, resolve);
+        pendingBacklogRequests.set(correlationId, (result) => {
+            console.log("✅ Réponse reçue pour checkBacklogExistence:", result);
+            resolve(result);
+        });
     });
 
     await producer.send({
         topic: 'get-backlog-by-id',
         messages: [{ value: JSON.stringify(payload) }],
-
     });
 
-    console.log("📤 Message envoyé :", payload);
+    console.log("📤 Demande envoyée (backlog-existence-check):", payload);
 
     return responsePromise;
 };

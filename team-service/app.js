@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const teamRoutes = require('./Routes/teamRoutes');
-const { startTeamExistenceConsumer } = require('./kafka/consumer');
+const { startConsumer } = require('./kafka/consumer');
 
 
 require('dotenv').config();
@@ -15,7 +15,7 @@ app.use('/api/teams', teamRoutes);
 app.listen(port, async () => {
     console.log(`Team service running on port ${port}`);
     try {
-        await startTeamExistenceConsumer();
+        await startConsumer();
         console.log('Kafka consumer démarré pour vérifier les utilisateurs');
     } catch (error) {
         console.error("Erreur lors du démarrage du consommateur Kafka :", error);

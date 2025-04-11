@@ -173,8 +173,16 @@ const getEmployeesByTeamId = async (req, res) => {
 const assignEmployeeToTeam = async (employeeId, teamId) => {
     try {
         const team = await checkTeamExistence(teamId);
-        if (!team) {
+        if (!team || !team.exists) {
             throw new Error("L'équipe n'existe pas.");
+        }
+
+        const employee = await prisma.employee.findUnique({
+            where: { id: employeeId },
+        });
+
+        if (!employee) {
+            throw new Error("L'employé n'existe pas.");
         }
 
         const updatedEmployee = await prisma.employee.update({
@@ -182,10 +190,10 @@ const assignEmployeeToTeam = async (employeeId, teamId) => {
             data: { teamId: teamId },
         });
 
-        console.log(`Employé ${employeeId} assigné à l'équipe ${teamId}`);
+        console.log(`✅ Employé ${employeeId} assigné à l'équipe ${teamId}`);
         return updatedEmployee;
     } catch (error) {
-        console.error("Erreur lors de l'assignation de l'employé:", error.message);
+        console.error("❌ Erreur lors de l'assignation de l'employé:", error.message);
         throw error;
     }
 };

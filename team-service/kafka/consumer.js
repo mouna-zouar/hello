@@ -1,45 +1,63 @@
-const kafka = require('./kafkaClient');
-const consumer = kafka.consumer({ groupId: 'employee-service' });
+const { Kafka } = require('kafkajs');
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
+const kafka = new Kafka({
+    clientId: 'team-service',
+    brokers: ['localhost:9092'],
+});
+
+const consumer = kafka.consumer({ groupId: 'team-service-group2' });
 const producer = kafka.producer();
-const { getTeamById } = require('../controllers/teamController');
 
-const startTeamExistenceConsumer = async () => {
-    await consumer.connect();
-    await producer.connect();
-    await consumer.subscribe({ topic: 'team-existence-check', fromBeginning: false });
+const startConsumer = async () => {
+    try {
+        await consumer.connect();
+        console.log("✅ Consumer connecté à Kafka");
 
-    await consumer.run({
-        eachMessage: async ({ message }) => {
-            const messageValue = message.value ? message.value.toString() : null;
+        await producer.connect();
 
-            if (!messageValue) {
-                console.error('❌ Message reçu vide ou mal formaté');
-                return;
-            }
+        await consumer.subscribe({ topic: 'team-existence-check', fromBeginning: false });
+        console.log("🎧 Consumer Kafka connecté et abonné au topic 'team-existence-check'");
 
-            try {
-                const parsed = JSON.parse(messageValue);
-                const { correlationId, teamId } = parsed;
+        console.log("✅ Consumer Kafka connecté dans team-service");
 
-                console.log("🧪 Reçu teamId =", teamId);
+        await consumer.run({
+            eachMessage: async ({ topic, partition, message }) => {
+                try {
+                    const rawMessage = message.value.toString();
+                    console.log(`📩 Message reçu sur ${topic} :`, rawMessage);
 
-                const result = await getTeamById(teamId);
+                    const data = JSON.parse(rawMessage);
+                    const teamId = parseInt(data.teamId);
+                    const correlationId = data.correlationId;
 
-                await producer.send({
-                    topic: 'team-existence-response',
-                    messages: [{
-                        value: JSON.stringify({
-                            correlationId,
-                            teamId,
-                            exists: result.exists
-                        })
-                    }]
-                });
-            } catch (error) {
-                console.error("❌ Erreur lors du traitement du message:", error);
-            }
-        }
-    });
+                    console.log("🔎 Recherche du teamId :", teamId);
+
+                    const team = await prisma.team.findUnique({
+                        where: { id: teamId },
+                    });
+
+                    const responseMessage = {
+                        correlationId,
+                        teamId: team ? team.id : null,
+                        exists: !!team,
+                    };
+
+                    await producer.send({
+                        topic: 'team-existence-response',
+                        messages: [{ value: JSON.stringify(responseMessage) }],
+                    });
+
+                    console.log("📤 Réponse envoyée :", responseMessage);
+                } catch (err) {
+                    console.error("❌ Erreur lors du traitement du message :", err);
+                }
+            },
+        });
+    } catch (error) {
+        console.error("❌ Erreur Kafka team-service :", error);
+    }
 };
 
-module.exports = { startTeamExistenceConsumer };
+module.exports = { startConsumer };

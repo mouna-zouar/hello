@@ -8,7 +8,7 @@ const getEmployeesByTeamId = async (req, res) => {
     const { teamId } = req.params;
 
     try {
-        const employeeResponse = await axios.get(`http://localhost:3002/employees?teamId=${teamId}`);
+        const employeeResponse = await axios.get(`http://localhost:3012/api/employees?teamId=${teamId}`);
 
         if (employeeResponse.status === 200) {
             return res.status(200).json(employeeResponse.data);
@@ -141,7 +141,7 @@ const deleteTeam = async (req, res) => {
     }
 };
 
-const assignEmployeeToTeam = async (req, res) => {
+/*const assignEmployeeToTeam = async (req, res) => {
     const { employeeId, teamId } = req.params;
 
     if (!employeeId || !teamId) {
@@ -180,7 +180,7 @@ const assignEmployeeToTeam = async (req, res) => {
         console.error('Erreur lors de l\'assignation de l\'employé:', error);
         res.status(500).json({ error: "Erreur serveur lors de l'assignation de l'employé" });
     }
-};
+};*/
 
 module.exports = {
     searchTeamByName,
@@ -189,6 +189,5 @@ module.exports = {
     getTeamById,
     updateTeam,
     deleteTeam,
-    assignEmployeeToTeam,
     getEmployeesByTeamId
 };

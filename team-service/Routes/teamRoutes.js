@@ -18,6 +18,6 @@ router.delete('/:teamId', teamController.deleteTeam);
 
 router.get('/search', teamController.searchTeamByName);
 
-router.put('/assign/:employeeId/:teamId',teamController.assignEmployeeToTeam);
+//router.put('/assign/:employeeId/:teamId',teamController.assignEmployeeToTeam);
 
 module.exports = router;

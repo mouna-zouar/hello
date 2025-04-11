@@ -5,14 +5,14 @@ const checkPermission = require("../middlewares/check");
 const authMiddleware = require("../middlewares/authMiddleware");
 router.post('/', meetingController.createSprintMeeting);
 
-router.get('/',authMiddleware, checkPermission("Meeting", "VIEW"), meetingController.getSprintMeetings);
+router.get('/', meetingController.getSprintMeetings);
 
-router.get('/:id',authMiddleware, checkPermission("Meeting", "VIEW"), meetingController.getSprintMeetingById);
+router.get('/:id',meetingController.getSprintMeetingById);
 
-router.put('/:id',authMiddleware, checkPermission("Meeting", "UPDATE"), meetingController.updateSprintMeeting);
+router.put('/:id', meetingController.updateSprintMeeting);
 
-router.delete('/:id',authMiddleware, checkPermission("Meeting", "DELETE"), meetingController.deleteSprintMeeting);
+router.delete('/:id', meetingController.deleteSprintMeeting);
 
-router.get('/sprint/:sprintId',authMiddleware, checkPermission("Meeting", "VIEW"), meetingController.getSprintMeetingsBySprintId);
+router.get('/sprint/:sprintId', meetingController.getSprintMeetingsBySprintId);
 
 module.exports = router;

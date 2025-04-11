@@ -25,10 +25,10 @@ const initKafkaRequestResponse = async () => {
                 const parsed = JSON.parse(message.value.toString());
                 console.log(`📩 Réponse reçue:`, parsed);
 
-                const { correlationId, projectId, exists } = parsed;
+                const { correlationId, backlogId, exists } = parsed;
                 const resolve = pendingProjectRequests.get(correlationId);
                 if (resolve) {
-                    resolve({ projectId, exists });
+                    resolve({ backlogId, exists });
                     pendingProjectRequests.delete(correlationId);
                 }
             },

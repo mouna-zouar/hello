@@ -29,10 +29,16 @@ const startConsumer = async () => {
                     console.log(`📩 Message reçu sur ${topic} :`, rawMessage);
 
                     const data = JSON.parse(rawMessage);
+
+                    if (!data.correlationId || !data.backlogId) {
+                        console.error("❌ Message reçu invalide, données manquantes");
+                        return;
+                    }
+
                     const backlogId = parseInt(data.backlogId);
                     const correlationId = data.correlationId;
 
-                    console.log("🔎 Recherche du projet ID :", backlogId);
+                    console.log("🔎 Recherche du backlog ID :", backlogId);
 
                     const backlog = await prisma.backlog.findUnique({
                         where: { id: backlogId },
@@ -40,7 +46,7 @@ const startConsumer = async () => {
 
                     const responseMessage = {
                         correlationId,
-                        projectId: backlog ? backlog.id : null,
+                        backlogId: backlog ? backlog.id : null,
                         exists: !!backlog,
                     };
 
@@ -55,8 +61,9 @@ const startConsumer = async () => {
                 }
             },
         });
+
     } catch (error) {
-        console.error("❌ Erreur Kafka project-service :", error);
+        console.error("❌ Erreur Kafka backlog-service :", error);
     }
 };
 

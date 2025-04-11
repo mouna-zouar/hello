@@ -59,7 +59,7 @@ const createSprintMeeting = async (req, res) => {
 const getSprintMeetings = async (req, res) => {
     try {
         const meetings = await prisma.sprintMeeting.findMany();
-        return res.status(200).json({ meetings });
+        return res.status(200).json({ data:meetings });
     } catch (error) {
         console.error("Erreur lors de la récupération des réunions de sprint:", error);
         return res.status(500).json({ error: "Erreur interne lors de la récupération des réunions." });
@@ -78,7 +78,7 @@ const getSprintMeetingById = async (req, res) => {
             return res.status(404).json({ error: "Réunion de sprint non trouvée." });
         }
 
-        return res.status(200).json({ meeting });
+        return res.status(200).json({ data:meeting });
     } catch (error) {
         console.error("Erreur lors de la récupération de la réunion de sprint:", error);
         return res.status(500).json({ error: "Erreur interne lors de la récupération de la réunion." });

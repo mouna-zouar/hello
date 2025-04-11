@@ -40,7 +40,7 @@ const startConsumer = async () => {
 
                     const responseMessage = {
                         correlationId,
-                        projectId: employee ? employee.id : null,
+                        employeeId: employee ? employee.id : null,
                         exists: !!employee,
                     };
 
