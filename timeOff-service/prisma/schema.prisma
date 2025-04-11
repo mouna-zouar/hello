@@ -1,0 +1,32 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model TimeOff {
+  id          Int           @id @default(autoincrement())
+  startDate   DateTime
+  endDate     DateTime
+  timeOffType TimeOffType
+  status      TimeOffStatus @default(EN_ATTENTE)
+  employeeId  Int
+}
+enum TimeOffStatus {
+  EN_ATTENTE
+  APPROUVE
+  REFUSE
+}
+
+enum TimeOffType {
+  CONGE_PAYE
+  CONGE_MALADIE
+  CONGE_SANS_SOLDE
+  CONGE_PARENTAL
+}
+
+

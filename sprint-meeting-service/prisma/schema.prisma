@@ -1,0 +1,31 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model SprintMeeting {
+  id           Int       @id @default(autoincrement())
+  sprintId     Int
+  taskId       Int?
+  projectId    Int?
+  meetingDate  DateTime
+  agenda       String
+  status              String
+  onlineMeetingLink   String?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  participants SprintMeetingParticipant[]
+}
+
+model SprintMeetingParticipant {
+  id         Int @id @default(autoincrement())
+  meetingId  Int
+  employeeId Int
+  SprintMeeting SprintMeeting @relation(fields: [meetingId], references: [id])
+}
+
+

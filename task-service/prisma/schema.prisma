@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  priority    String
+  status      String
+  type        String
+  startDate    DateTime
+  endDate      DateTime
+  progress    Int
+
+  projectId   Int?
+  backlogId   Int?
+  sprintId    Int?
+
+  parentId    Int?
+  parent      Task?    @relation("TaskHierarchy", fields: [parentId], references: [id])
+  subTasks    Task[]   @relation("TaskHierarchy")
+
+  assignedTo  Int?
+
+  dependencies TaskDependency[] @relation("TaskDependencies")
+  dependents   TaskDependency[] @relation("TaskDependents")
+}
+
+model TaskDependency {
+  id          Int   @id @default(autoincrement())
+  taskId      Int
+  dependentId Int
+
+  task        Task  @relation("TaskDependencies", fields: [taskId], references: [id])
+  dependent   Task  @relation("TaskDependents", fields: [dependentId], references: [id])
+
+  @@unique([taskId, dependentId])
+}
+
+
+
