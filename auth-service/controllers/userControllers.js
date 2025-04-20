@@ -93,7 +93,7 @@ const login = async (req, res) => {
     }
 };
 
-const getAllUsers = async (req, res) => {
+/*const getAllUsers = async (req, res) => {
     try {
         const { page = 1, limit = 10 } = req.query;
 
@@ -124,6 +124,16 @@ const getAllUsers = async (req, res) => {
                 totalUsers: totalUsers
             }
         });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erreur serveur" });
+    }
+};*/
+const getAllUsers = async (req, res) => {
+    try {
+        const users = await prisma.user.findMany();
+
+        res.status(200).json({ data: users });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Erreur serveur" });

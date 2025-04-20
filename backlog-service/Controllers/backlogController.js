@@ -10,10 +10,12 @@ const createBacklog = async (req, res) => {
         const validatedData = backlogSchema.parse(req.body);
         const { name, description, projectId } = validatedData;
 
-        const { exists: projectExists } = await checkProjectExistence(projectId);
+       /* const { exists: projectExists } = await checkProjectExistence(projectId);
         if (!projectExists) {
             return res.status(404).json({ error: "Projet non trouvé via Kafka." });
-        }
+        }*/
+        const project = await getProjectById(projectId);
+        console.log(project);
 
         const newBacklog = await prisma.backlog.create({
             data: {
@@ -79,11 +81,12 @@ const updateBacklog = async (req, res) => {
         if (!backlog) {
             return res.status(404).json({ error: "Backlog non trouvé" });
         }
-
-        const project = await checkProjectExistence(parseInt(projectId));
+        const project = await getProjectById(projectId);
+        console.log(project);
+       /* const project = await checkProjectExistence(parseInt(projectId));
         if (!project) {
             return res.status(404).json({ error: "Projet non trouvé" });
-        }
+        }*/
 
         const updatedBacklog = await prisma.backlog.update({
             where: { id: parseInt(id) },

@@ -12,10 +12,8 @@ const { startConsumer } = require('./kafka/consumer');
 
 const app = express();
 app.use(cors({
-    origin: 'http://localhost:3000',
-    methods: 'GET,POST,PUT,DELETE',
-    allowedHeaders: 'Content-Type,Authorization',
-    credentials: true
+    origin: 'http://localhost:5000',
+    credentials: true,
 }));
 app.use(helmet());
 app.use(bodyParser.json());
