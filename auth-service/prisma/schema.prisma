@@ -65,6 +65,7 @@ model User {
   email        String     @unique
   password     String
   photo        String?
+  provider  String?
   gender       Gender
   status       Status     @default(active)
   roleId       Int
