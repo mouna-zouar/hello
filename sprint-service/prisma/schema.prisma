@@ -15,8 +15,8 @@ datasource db {
 model Sprint {
   id          Int      @id @default(autoincrement())
   name        String
-  startDate   DateTime
-  endDate     DateTime
+  startDate   DateTime?
+  endDate     DateTime?
   projectId   Int?
   backlogId   Int?
   status    String   @default("Open")

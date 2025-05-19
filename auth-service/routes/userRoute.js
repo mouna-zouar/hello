@@ -16,6 +16,7 @@ const authLimiter = rateLimit({
 // Auth
 router.post("/register", authLimiter, userController.register);
 router.post("/login", authLimiter, userController.login);
+router.post('/reset-password', userController.resetPassword);
 
 // Utilisateurs
 

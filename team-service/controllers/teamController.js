@@ -4,22 +4,67 @@ const prisma = new PrismaClient();
 const { getEmployeeById, updateEmployee } = require('../services/employeeService');
 const {checkEmployeeExistence}=require('../kafka/producers');
 
-const getEmployeesByTeamId = async (req, res) => {
-    const { teamId } = req.params;
-
+const getAllTeamsWithEmployees = async (req, res) => {
     try {
-        const employeeResponse = await axios.get(`http://localhost:3012/api/employees?teamId=${teamId}`);
+        // Récupère toutes les équipes
+        const teams = await prisma.team.findMany();
 
-        if (employeeResponse.status === 200) {
-            return res.status(200).json(employeeResponse.data);
-        }
+        // Récupère toutes les équipes avec les employés associés
+        const teamsWithEmployees = await Promise.all(
+            teams.map(async (team) => {
+                try {
+                    const employeesResponse = await axios.get(`http://localhost:3012/api/employees/team?teamId=${team.id}`);
 
-        res.status(404).json({ error: "Aucun employé trouvé pour cette équipe" });
+                    // Enrichir chaque employé avec les informations de l'utilisateur
+                    const employeesWithUserDetails = await Promise.all(
+                        employeesResponse.data.map(async (employee) => {
+                            try {
+                                const employeeWithUser = await axios.get(`http://localhost:3012/api/employees/employee-with-user/${employee.id}`);
+                                return {
+                                    ...employee,
+                                    user: employeeWithUser.data.user
+                                };
+                            } catch (userError) {
+                                console.error(`Erreur lors de la récupération de l'utilisateur pour l'employé ${employee.id}:`, userError.message);
+                                return employee; // Retourne l'employé sans l'utilisateur si erreur
+                            }
+                        })
+                    );
+
+                    return {
+                        id: team.id,
+                        name: team.name,
+                        createdAt: team.createdAt,
+                        updatedAt: team.updatedAt,
+                        employees: {
+                            data: employeesWithUserDetails // Ajoute les employés enrichis avec les infos de l'utilisateur
+                        }
+                    };
+                } catch (employeeError) {
+                    console.error(`Erreur lors de la récupération des employés pour l'équipe ${team.name}:`, employeeError.message);
+                    return {
+                        id: team.id,
+                        name: team.name,
+                        createdAt: team.createdAt,
+                        updatedAt: team.updatedAt,
+                        employees: {
+                            data: [] // Retourne une liste vide d'employés en cas d'erreur
+                        }
+                    };
+                }
+            })
+        );
+
+        // Réponse avec toutes les équipes et leurs employés enrichis
+        res.status(200).json({ data: teamsWithEmployees });
+
     } catch (error) {
-        console.error('Erreur lors de la récupération des employés pour cette équipe:', error.message);
-        res.status(500).json({ error: "Erreur serveur lors de la récupération des employés" });
+        console.error('Erreur lors de la récupération des équipes:', error.message);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération des équipes" });
     }
 };
+
+
 
 const searchTeamByName = async (req, res) => {
     const { name } = req.query;
@@ -189,5 +234,5 @@ module.exports = {
     getTeamById,
     updateTeam,
     deleteTeam,
-    getEmployeesByTeamId
+    getAllTeamsWithEmployees,
 };

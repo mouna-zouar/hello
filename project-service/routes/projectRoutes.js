@@ -19,4 +19,8 @@ router.delete('/:id',  projectController.deleteProject);
 
 router.put('/:projectId/assign/:teamId',  projectController.assignProjectToTeam);
 
+router.get('/user/:userId', projectController.getProjectsByUserId);
+
+router.get('/team/:teamId', projectController.getProjectsByTeamId);
+
 module.exports = router;

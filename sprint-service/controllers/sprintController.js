@@ -14,8 +14,8 @@ const createSprint = async (req, res) => {
         createSprintSchema.parse({ name, startDate, endDate, projectId, backlogId });
 
         if (projectId) {
-            const { exists: projectExists } = await checkProjectExistence(projectId);
-            if (!projectExists) {
+            const project = await getProjectById(projectId);
+            if (!project) {
                 return res.status(404).json({ error: "project non trouvée via Kafka." });
             }
         }
@@ -29,8 +29,6 @@ const createSprint = async (req, res) => {
         const sprint = await prisma.sprint.create({
             data: {
                 name,
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
                 projectId: parseInt(projectId),
                 backlogId: parseInt(backlogId)
             }
@@ -332,6 +330,8 @@ const openSprint = async (req, res) => {
         res.status(500).json({ message: "Erreur serveur" });
     }
 };
+
+
 
 module.exports = {
     createSprint,

@@ -6,7 +6,6 @@ services:
       - "2181:2181"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
-
   kafka:
     image: bitnami/kafka:latest
     container_name: kafka

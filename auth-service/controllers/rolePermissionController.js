@@ -32,7 +32,6 @@ const addPermissionToRole = async (req, res) => {
     }
 };
 
-
 const removePermissionFromRole = async (req, res) => {
     const { roleId, permissionId } = req.params;
     try {

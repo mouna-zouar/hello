@@ -14,5 +14,6 @@ router.get('/:id', backlogController.getBacklogById);
 router.put('/:id',  backlogController.updateBacklog);
 
 router.delete('/:id',  backlogController.deleteBacklog);
+router.get('/project/:projectId', backlogController.getBacklogByProjectId);
 
 module.exports = router;

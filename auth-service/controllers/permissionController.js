@@ -88,11 +88,36 @@ const getPermissionById = async (req, res) => {
     }
 };
 
+const getPermissionsGroupedByModel = async (req, res) => {
+    try {
+        const permissions = await prisma.permission.findMany();
+        console.log('Permissions récupérées:', permissions);
+
+        const grouped = permissions.reduce((acc, perm) => {
+            if (!perm.model) {
+                console.warn('Permission sans modèle:', perm);
+            }
+            if (!acc[perm.model]) acc[perm.model] = [];
+            acc[perm.model].push(perm);
+            return acc;
+        }, {});
+
+        console.log('Permissions groupées:', grouped);
+
+        res.status(200).json({ data: grouped });
+    } catch (error) {
+        console.error('Erreur dans getPermissionsGroupedByModel:', error);
+        res.status(500).json({ error: "Erreur serveur lors du regroupement des permissions" });
+    }
+};
+
+
 
 module.exports = {
     createPermission,
     getAllPermissions,
     updatePermission,
     deletePermission,
-    getPermissionById
+    getPermissionById,
+    getPermissionsGroupedByModel
 };

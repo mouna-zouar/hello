@@ -16,4 +16,7 @@ router.put('/:id', permissionController.updatePermission);
 
 router.delete('/:id', permissionController.deletePermission);
 
+router.get('/groupe/grouped-by-model', permissionController.getPermissionsGroupedByModel);  // <-- nouvelle route
+
+
 module.exports = router;

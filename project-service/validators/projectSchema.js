@@ -12,6 +12,10 @@ const projectSchema = z.object({
         z.string().regex(/^\d+$/, 'backlogId doit être un entier sous forme de string'),
         z.number()
     ]).optional(),
+    userId: z.union([
+        z.string().regex(/^\d+$/, 'userId doit être un entier sous forme de string'),
+        z.number()
+    ]).optional(),
     status: z.string().default('ONGOING'),
 });
 module.exports = {

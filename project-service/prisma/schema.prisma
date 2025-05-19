@@ -27,6 +27,7 @@ model Project {
   status      Status   @default(ONGOING)
   backlogId Int?
   teamId    Int?
+  userId    Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   projectEmployees ProjectEmployee[]

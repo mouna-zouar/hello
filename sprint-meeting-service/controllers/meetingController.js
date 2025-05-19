@@ -15,22 +15,14 @@ const createSprintMeeting = async (req, res) => {
     const { sprintId, meetingDate, agenda, participants, taskId, projectId, onlineMeetingLink, status } = parsedData.data;
 
     try {
-        const [taskExistence, projectExistence, sprintExistence] = await Promise.all([
+        const [taskExistence] = await Promise.all([
             checkTaskExistence(taskId),
-            checkProjectExistence(projectId),
-            checkSprintExistence(sprintId)
+            getProjectById(projectId),
+            getSprintById(sprintId)
         ]);
 
         if (!taskExistence.exists) {
             return res.status(404).json({ error: "Le task n'a pas été trouvé." });
-        }
-
-        if (!projectExistence.exists) {
-            return res.status(404).json({ error: "Le projet n'a pas été trouvé." });
-        }
-
-        if (!sprintExistence.exists) {
-            return res.status(404).json({ error: "Le sprint n'a pas été trouvé." });
         }
 
         const newMeeting = await prisma.sprintMeeting.create({

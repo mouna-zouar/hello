@@ -9,8 +9,14 @@ require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3002;
+const cors = require('cors');
 
 app.use(bodyParser.json());
+
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+}));
 app.use('/api/employees', employeeRoutes);
 
 

@@ -110,10 +110,75 @@ const getDepartmentWithRoles = async (req, res) => {
     }
 };
 
+const createDepartmentWithRoles = async (req, res) => {
+    try {
+        const { name, roleIds } = req.body;
+
+        if (!name || !Array.isArray(roleIds)) {
+            return res.status(400).json({ error: "Le nom et roleIds (tableau d'IDs) sont requis." });
+        }
+
+        const newDepartment = await prisma.department.create({
+            data: {
+                name,
+                roles: {
+                    connect: roleIds.map(id => ({ id })),
+                },
+            },
+            include: {
+                roles: true,
+            },
+        });
+
+        await produceEvent(EVENTS.DEPARTMENT_CREATED, newDepartment);
+
+        res.status(201).json({
+            message: 'Département créé avec succès',
+            department: newDepartment,
+        });
+    } catch (error) {
+        console.error('Erreur lors de la création du département :', error);
+        res.status(500).json({ error: "Erreur serveur lors de la création du département" });
+    }
+};
+const updateDepartmentWithRoles = async (req, res) => {
+    const { id } = req.params; // L'ID du département est extrait de l'URL
+    const { name, roleIds } = req.body; // Nom et IDs des rôles à mettre à jour
+
+    // Vérification que les données nécessaires sont présentes
+    if (!name || !Array.isArray(roleIds)) {
+        return res.status(400).json({ error: "Le nom et roleIds (tableau d'IDs) sont requis." });
+    }
+
+    try {
+        const updatedDepartment = await prisma.department.update({
+            where: {
+                id: parseInt(id),  // Assurez-vous que l'ID est un entier
+            },
+            data: {
+                name,  // Mise à jour du nom du département
+                roles: {
+                    set: roleIds.map(roleId => ({ id: roleId })),  // Mise à jour des rôles (set) avec les IDs
+                },
+            },
+            include: {
+                roles: true,  // Inclure les rôles mis à jour dans la réponse
+            },
+        });
+
+        res.status(200).json({ message: "Département mis à jour avec succès", department: updatedDepartment });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erreur serveur lors de la mise à jour du département" });
+    }
+};
+
 
 module.exports = {
     createDepartment,
     getAllDepartments,
+    createDepartmentWithRoles,
+    updateDepartmentWithRoles,
     updateDepartment,
     deleteDepartment,
     getDepartmentWithRoles,

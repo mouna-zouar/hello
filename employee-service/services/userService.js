@@ -1,24 +1,16 @@
 const axios = require('axios');
 
-const getUserById = async (userId) => {
-    try {
-        const baseUrl = process.env.AUTH_SERVICE_URL;
-        const url = `${baseUrl}/api/users/${userId}`;
 
-        console.log(`🔍 Requête envoyée à : ${url}`);
-
-        const response = await axios.get(url);
-        return response.data;
-    } catch (error) {
-        if (error.response) {
-            console.error(` Erreur API Auth Service: ${error.response.status} - ${error.response.data?.error || error.response.statusText}`);
-        } else if (error.request) {
-            console.error(" Aucune réponse reçue du service Auth:", error.request);
-        } else {
-            console.error("Erreur lors de la requête:", error.message);
+    const getUserById = async (userId) => {
+        try {
+            const response = await axios.get(`http://localhost:3001/api/users/${userId}`);
+            return response.data;
+        } catch (error) {
+            console.error("Erreur lors de la récupération de l'équipe:", error.message);
+            throw new Error("Erreur lors de la récupération de l'équipe");
         }
-        return null;
-    }
-};
+    };
+    
+
 
 module.exports = { getUserById };

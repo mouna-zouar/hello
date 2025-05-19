@@ -53,16 +53,23 @@ const login = async (req, res) => {
     try {
         const { email, password } = loginSchema.parse(req.body);
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        // Vérifie si l'utilisateur existe
+        const user = await prisma.user.findUnique({
+            where: { email },
+            select: { id: true, email: true, password: true, roleId: true } // Récupère uniquement les informations nécessaires
+        });
+
         if (!user) {
             return res.status(401).json({ error: "Email ou mot de passe incorrect" });
         }
 
+        // Vérifie si le mot de passe correspond
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ error: "Email ou mot de passe incorrect" });
         }
 
+        // Crée les tokens
         const accessToken = jwt.sign(
             { id: user.id, role: user.roleId },
             process.env.JWT_SECRET,
@@ -74,19 +81,30 @@ const login = async (req, res) => {
             { expiresIn: "3d" }
         );
 
+        // Récupère l'User-Agent et l'IP
         const userAgent = req.get('User-Agent') || "Unknown User-Agent";
+        const ipAddress = req.ip || "Unknown IP";
 
-        console.log("User-Agent: ", userAgent);
-
+        // Log les informations de session dans la base de données
         await prisma.sessionLog.create({
             data: {
                 userId: user.id,
                 userAgent: userAgent,
-                ipAddress: req.ip
+                ipAddress: ipAddress
             }
         });
 
-        res.json({ message: "Connexion réussie", accessToken, refreshToken });
+        // Répond avec les tokens et les informations utilisateur
+        res.json({
+            message: "Connexion réussie",
+            accessToken,
+            refreshToken,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.roleId // Ajouter ici d'autres informations que tu veux exposer
+            }
+        });
     } catch (error) {
         console.error(error);
         res.status(400).json({ error: error.message || "Erreur lors de la connexion" });
@@ -202,20 +220,21 @@ const getUserById = async (req, res) => {
 };*/
 
 const deleteUser = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
+    const userId = parseInt(id);  // Convertir id en entier
 
-        const user = await prisma.user.findUnique({ where: { id } });
-        if (!user) {
-            return res.status(404).json({ error: "Utilisateur non trouvé" });
-        }
-
-        await prisma.user.delete({ where: { id } });
-        res.json({ message: "Utilisateur supprimé avec succès" });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erreur serveur" });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
     }
+
+    await prisma.user.delete({ where: { id: userId } });  // Utiliser userId (int)
+    res.json({ message: "Utilisateur supprimé avec succès" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
 };
 
 const getUserSessions = async (req, res) => {
@@ -329,7 +348,36 @@ const updateUser = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur" });
     }
 };
+const resetPassword = async (req, res) => {
+    try {
+        const { email, newPassword } = req.body;
 
+        if (!email || !newPassword) {
+            return res.status(400).json({ error: 'Email et nouveau mot de passe sont requis' });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: 'Utilisateur non trouvé' });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        const updatedUser = await prisma.user.update({
+            where: { email },
+            data: { password: hashedPassword }
+        });
+
+        res.status(200).json({ message: 'Mot de passe réinitialisé avec succès' });
+
+    } catch (error) {
+        console.error('Erreur lors de la réinitialisation du mot de passe:', error);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
+};
 module.exports = {
     register,
     login,
@@ -338,5 +386,6 @@ module.exports = {
     deleteUser,
     getUserSessions,
     updateUser,
-    verifyTokenAndPermissions
+    verifyTokenAndPermissions,
+    resetPassword
 };

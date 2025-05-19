@@ -15,6 +15,8 @@ router.delete('/:id', timeOffController.deleteTimeOff);
 router.get('/employees/:id/timeoffs/remaining', timeOffController.getRemainingTimeOff);
 
 router.get('/employee/:id/timeoffs',  timeOffController.getEmployeeWithTimeOffs);
+router.put('/:id/approve', timeOffController.approveTimeOff);
+router.put('/:id/reject', timeOffController.rejectTimeOff);
 
 
 module.exports = router;

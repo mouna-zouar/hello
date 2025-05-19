@@ -15,6 +15,11 @@ router.get('/sprint/:sprintId', taskController.getTasksBySprintId);
 router.get('/backlog/:backlogId',taskController.getTasksByBacklogId);
 router.get('/assignedTo/:assignedTo', taskController.getTasksByAssignedTo);
 router.put('/tasks/:id/employee', taskController.assignTaskToEmployee);
+router.get('/epics', taskController.getAllEpics);
+router.get('/epics/project/:projectId', taskController.getEpicsByProjectId);
+router.get('/epics/sprint/:sprintId', taskController.getEpicsBySprintId);
+router.get('/project/:projectId/sprint/:sprintId', taskController.getTasksBySprintIdAndProjectId);
+router.get('/:id/details', taskController.getTaskWithDetailsById);
 
 
 
@@ -28,7 +33,8 @@ router.put('/assign/backlog', taskController.assignTasksToBacklog);
 
 router.put('/unassign/:sprintId', taskController.unassignTasksFromSprint);
 router.get('/epic/:epicId/userstories', taskController.getEpicWithUserStories);
-router.get('/tasks/grouped', taskController.getTasksGroupedByBacklog);
+router.get('/grouped', taskController.getTasksGroupedByBacklog);
+router.get('/epics/sprint/:sprintId', taskController.getTasksWithEpicsBySprintId);
 
 
 module.exports = router;

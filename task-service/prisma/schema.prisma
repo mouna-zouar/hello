@@ -10,12 +10,12 @@ model Task {
   id          Int      @id @default(autoincrement())
   title       String
   description String?
-  priority    String
-  status      String
-  type        String
-  startDate    DateTime
-  endDate      DateTime
-  progress    Int
+  priority    String?
+  status      String?
+  type        String?
+  startDate    DateTime?
+  endDate      DateTime?
+  progress    Int?
 
   projectId   Int?
   backlogId   Int?
@@ -29,6 +29,9 @@ model Task {
 
   dependencies TaskDependency[] @relation("TaskDependencies")
   dependents   TaskDependency[] @relation("TaskDependents")
+
+  columnId    Int?
+  column      Column?  @relation("ColumnTasks", fields: [columnId], references: [id])
 }
 
 model TaskDependency {
@@ -42,5 +45,15 @@ model TaskDependency {
   @@unique([taskId, dependentId])
 }
 
+model Column {
+  id        Int     @id @default(autoincrement())
+  name      String?
+  status    String?  @unique
+  limit     Int?   @default(5)
+
+  tasks     Task[]   @relation("ColumnTasks")
+
+  projectId Int?
+}
 
 

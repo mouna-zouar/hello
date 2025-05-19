@@ -1,8 +1,9 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { getEmployeeById } = require('../services/employeeService');
 const { sendEmail } = require('../services/emailService');
 const {checkEmployeeExistence} = require("../kafka/producers");
+
+const { getEmployeeWithUserById } = require('../services/employeeService');  // <-- Remplace getEmployeeById par la bonne fonction
 
 const addParticipant = async (req, res) => {
     const { meetingId, employeeId } = req.body;
@@ -17,10 +18,20 @@ const addParticipant = async (req, res) => {
             return res.status(404).json({ error: "Réunion non trouvée." });
         }
 
-        const employee = await checkEmployeeExistence(employeeId);
+        // Récupération complète de l'employé avec user (email etc.)
+        const employeeData = await getEmployeeWithUserById(employeeId);
 
-        if (!employee) {
+        if (!employeeData) {
             return res.status(404).json({ error: "Employé non trouvé." });
+        }
+
+        // Extraire l'email et prénom dans la bonne structure
+        const employeeEmail = employeeData.user?.data?.email;
+        const recipientName = employeeData.user?.data?.firstName || "Cher(e) employé(e)";
+
+        if (!employeeEmail) {
+            console.error("Email employé manquant, impossible d'envoyer le mail.");
+            return res.status(400).json({ error: "Email employé manquant." });
         }
 
         const existingParticipant = await prisma.sprintMeetingParticipant.findFirst({
@@ -44,8 +55,6 @@ const addParticipant = async (req, res) => {
             minute: '2-digit',
         }).format(meeting.meetingDate);
 
-        const recipientName = employee.firstName || "Cher(e) employé(e)";
-
         const emailContent = `
             Bonjour ${recipientName},\n\n
             Vous êtes invité à une réunion de sprint prévue le ${formattedDate}.\n
@@ -56,7 +65,7 @@ const addParticipant = async (req, res) => {
             L'équipe de gestion des projets.\n
         `;
 
-        await sendEmail(employee.email, "Invitation à une réunion de sprint", emailContent);
+        await sendEmail(employeeEmail, "Invitation à une réunion de sprint", emailContent);
 
         res.status(201).json({ message: "Participant ajouté avec succès et email envoyé.", participant: newParticipant });
     } catch (error) {
@@ -64,6 +73,7 @@ const addParticipant = async (req, res) => {
         res.status(500).json({ error: "Erreur interne du serveur." });
     }
 };
+
 
 const getMeetingParticipants = async (req, res) => {
     const { meetingId } = req.params;

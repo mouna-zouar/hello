@@ -40,7 +40,7 @@ const startConsumer = async () => {
 
                     const responseMessage = {
                         correlationId,
-                        projectId: sprint ? sprint.id : null,
+                        sprintId: sprint ? sprint.id : null,
                         exists: !!sprint,
                     };
 

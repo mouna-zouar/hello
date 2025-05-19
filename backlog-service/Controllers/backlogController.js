@@ -129,6 +129,25 @@ const deleteBacklog = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la suppression du backlog" });
     }
 };
+const getBacklogByProjectId = async (req, res) => {
+    const { projectId } = req.params;
+
+    try {
+        const backlogs = await prisma.backlog.findMany({
+            where: { projectId: parseInt(projectId) },
+        });
+
+        if (!backlogs || backlogs.length === 0) {
+            return res.status(404).json({ error: "Aucun backlog trouvé pour ce projet" });
+        }
+
+        res.status(200).json({ data: backlogs });
+    } catch (error) {
+        console.error('Erreur lors de la récupération du backlog par projectId:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération du backlog" });
+    }
+};
+
 
 module.exports = {
     createBacklog,
@@ -136,4 +155,5 @@ module.exports = {
     getBacklogById,
     updateBacklog,
     deleteBacklog,
+    getBacklogByProjectId
 };

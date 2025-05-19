@@ -7,7 +7,7 @@ const cors = require('cors');
 const app = express();
 const port = 3008;
 app.use(cors({
-    origin: 'http://localhost:5000',
+    origin: 'http://localhost:5173',
     credentials: true,
 }));
 app.use(bodyParser.json());
@@ -20,5 +20,5 @@ initKafkaRequestResponse().then(() => {
         await startConsumer();
     });
 }).catch(err => {
-    console.error("❌ Erreur lors de l'initialisation de Kafka :", err);
+    console.error(" Erreur lors de l'initialisation de Kafka :", err);
 });

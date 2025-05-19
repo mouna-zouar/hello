@@ -9,6 +9,45 @@ const { taskSchema } = require('../validators/taskSchema');
 const axios =require  ('axios');
 
 const prisma = new PrismaClient();
+const getTaskWithDetailsById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const task = await prisma.task.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!task) {
+      return res.status(404).json({ error: "Tâche non trouvée" });
+    }
+
+    const [
+      projectDetails,
+      backlogDetails,
+      sprintDetails,
+      employeeDetails,
+    ] = await Promise.all([
+      task.projectId ? getProjectById(task.projectId) : null,
+      task.backlogId ? getBacklogById(task.backlogId) : null,
+      task.sprintId ? getSprintById(task.sprintId) : null,
+      task.assignedTo ? getEmployeeById(task.assignedTo) : null,
+    ]);
+
+    const taskWithDetails = {
+      ...task,
+      project: projectDetails || null,
+      backlog: backlogDetails || null,
+      sprint: sprintDetails || null,
+      assignedEmployee: employeeDetails || null,
+    };
+
+    res.status(200).json(taskWithDetails);
+  } catch (error) {
+    console.error("Erreur lors de la récupération de la tâche avec détails:", error);
+    res.status(500).json({ error: "Erreur serveur lors de la récupération de la tâche." });
+  }
+};
+
 
 const createTask = async (req, res) => {
     try {
@@ -16,16 +55,12 @@ const createTask = async (req, res) => {
 
         const { title, description, priority, status, type, startDate, endDate, progress, projectId, backlogId, sprintId, parentId, assignedTo } = validatedData;
 
-        const [backlogExistence, projectExistence, sprint, employee] = await Promise.all([
-            checkBacklogExistence(backlogId),
-            checkProjectExistence(projectId),
+        const [ sprint, ] = await Promise.all([
+            getProjectById(projectId),
             checkSprintExistence(sprintId),
-            checkEmployeeExistence(assignedTo)
         ]);
 
-        if (!backlogExistence.exists) return res.status(404).json({ error: 'Le backlog n\'a pas été trouvé.' });
-        if (!projectExistence.exists) return res.status(404).json({ error: 'Le projet n\'a pas été trouvé.' });
-        if (!sprint || !employee) return res.status(404).json({ error: 'Sprint ou employé non trouvé.' });
+        if (!sprint ) return res.status(404).json({ error: 'Sprint ou employé non trouvé.' });
 
         const newTask = await prisma.task.create({
             data: {
@@ -204,6 +239,8 @@ const updateTaskStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
+    console.log('Statut reçu:', status); // Log pour vérifier le statut envoyé par le frontend
+
     if (!["TODO", "IN_PROGRESS", "DONE"].includes(status)) {
         return res.status(400).json({ error: "Statut invalide" });
     }
@@ -235,6 +272,26 @@ const getTasksBySprintId = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la récupération des tâches" });
     }
 };
+
+const getTasksBySprintIdAndProjectId = async (req, res) => {
+    const { sprintId, projectId } = req.params;
+
+    try {
+        const tasks = await prisma.task.findMany({
+            where: {
+                sprintId: parseInt(sprintId),
+                projectId: parseInt(projectId)
+            }
+        });
+
+        res.status(200).json(tasks);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des tâches:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération des tâches" });
+    }
+};
+
+
 
 const assignTasksToSprint = async (req, res) => {
     const { sprintId, taskIds } = req.body;
@@ -341,6 +398,36 @@ const getEpicWithUserStories = async (req, res) => {
     }
 };
 
+const getTasksWithEpicsBySprintId = async (req, res) => {
+    try {
+        const { sprintId } = req.params;
+
+        const tasks = await prisma.task.findMany({
+            where: { sprintId: parseInt(sprintId) },
+            include: {
+                epic: true,
+            },
+        });
+
+        if (tasks.length === 0) {
+            return res.status(404).json({ error: "Aucune tâche trouvée pour ce sprint." });
+        }
+
+        const tasksWithOrWithoutEpic = tasks.map(task => {
+            if (!task.epic) {
+                return { ...task, epic: null };
+            }
+            return task;
+        });
+
+        res.status(200).json(tasksWithOrWithoutEpic);
+    } catch (error) {
+        console.error("Erreur lors de la récupération des tâches avec Epics:", error);
+        res.status(500).json({ error: "Erreur serveur." });
+    }
+};
+
+
 const getTasksGroupedByBacklog = async (req, res) => {
     try {
         const tasks = await prisma.task.findMany({
@@ -348,7 +435,7 @@ const getTasksGroupedByBacklog = async (req, res) => {
                 backlog: true,
             },
             where: {
-                status: "Backlog", // Seulement les tâches en backlog
+                status: "Backlog",
             },
         });
 
@@ -406,12 +493,79 @@ const assignTaskToEmployee = async (req, res) => {
     }
 };
 
+const getAllEpics = async (req, res) => {
+    try {
+        const epics = await prisma.task.findMany({
+            where: { type: "EPIC" },
+            include: {
+                subTasks: {
+                    include: {
+                        subTasks: true,
+                    }
+                }
+            }
+        });
+
+        res.status(200).json({ epics });
+    } catch (error) {
+        console.error("Erreur lors de la récupération des Epics:", error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération des Epics." });
+    }
+};
+
+const getEpicsByProjectId = async (req, res) => {
+    const { projectId } = req.params;
+
+    try {
+        const epics = await prisma.task.findMany({
+            where: {
+                projectId: parseInt(projectId),
+                type: "EPIC"
+            },
+            include: {
+                subTasks: true
+            }
+        });
+
+        res.status(200).json({ epics });
+    } catch (error) {
+        console.error("Erreur lors de la récupération des Epics du projet:", error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération des Epics." });
+    }
+};
+
+const getEpicsBySprintId = async (req, res) => {
+    const { sprintId } = req.params;
+
+    try {
+        const epics = await prisma.task.findMany({
+            where: {
+                sprintId: parseInt(sprintId),
+                type: "EPIC"
+            },
+            include: {
+                subTasks: true
+            }
+        });
+
+        res.status(200).json({ epics });
+    } catch (error) {
+        console.error("Erreur lors de la récupération des Epics du sprint:", error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération des Epics." });
+    }
+};
+
+
+
 module.exports = {
     createTask,
     getAllTasks,
     getTaskById,
     updateTask,
     deleteTask,
+    getEpicsByProjectId,
+    getEpicsBySprintId,
+    getAllEpics,
     getTasksByProjectId,
     getProjectWithTasks,
     prioritizeTasks,
@@ -424,5 +578,8 @@ module.exports = {
     getEpicWithUserStories,
     getTasksGroupedByBacklog,
     assignTasksToBacklog,
-    assignTaskToEmployee
+    assignTaskToEmployee,
+    getTasksWithEpicsBySprintId,
+    getTasksBySprintIdAndProjectId,
+    getTaskWithDetailsById
 };

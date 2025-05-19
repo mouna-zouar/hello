@@ -66,7 +66,7 @@ model User {
   password     String
   photo        String?
   provider  String?
-  gender       Gender
+  gender       Gender?
   status       Status     @default(active)
   roleId       Int
   departmentId Int

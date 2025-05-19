@@ -2,11 +2,10 @@
 const { z } = require('zod');
 
 const createSprintSchema = z.object({
-    name: z.string().min(1, { message: "Le nom est requis." }),
-    startDate: z.string().refine(val => !isNaN(Date.parse(val)), { message: "Date de début invalide." }),
-    endDate: z.string().refine(val => !isNaN(Date.parse(val)), { message: "Date de fin invalide." }),
-    projectId: z.number().int().positive({ message: "ID du projet doit être un entier positif." }),
-    backlogId: z.number().int().positive({ message: "ID du backlog doit être un entier positif." })
+    name: z.string().min(1, { message: "Le nom est requis." }), // Le nom est requis
+
+    projectId: z.number().int().positive({ message: "L'ID du projet doit être un entier positif." }), // Validation de l'ID du projet
+    backlogId: z.number().int().positive({ message: "L'ID du backlog doit être un entier positif." }) // Validation de l'ID du backlog
 });
 
 const updateSprintSchema = z.object({

@@ -17,6 +17,8 @@ router.put('/:id', employeeController.updateEmployee);
 
 router.delete('/:id', employeeController.deleteEmployee);
 
+router.get('/employee-with-user/:id', employeeController.getEmployeeWithUser);
+
 router.get('/team', employeeController.getEmployeesByTeamId);
 
 router.put('/assign/:employeeId/:teamId', async (req, res) => {

@@ -188,6 +188,60 @@ const updateTimeOff = async (req, res) => {
     }
 };
 
+const approveTimeOff = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const timeOff = await prisma.timeOff.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!timeOff) {
+      return res.status(404).json({ error: 'TimeOff introuvable.' });
+    }
+
+    const updatedTimeOff = await prisma.timeOff.update({
+      where: { id: parseInt(id) },
+      data: { status: TimeOffStatus.APPROVED },
+    });
+
+    res.status(200).json({
+      message: 'TimeOff approuvé avec succès.',
+      timeOff: updatedTimeOff,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur lors de l\'approbation du TimeOff.' });
+  }
+};
+const rejectTimeOff = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const timeOff = await prisma.timeOff.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!timeOff) {
+      return res.status(404).json({ error: 'TimeOff introuvable.' });
+    }
+
+    const updatedTimeOff = await prisma.timeOff.update({
+      where: { id: parseInt(id) },
+      data: { status: TimeOffStatus.REJECTED },
+    });
+
+    res.status(200).json({
+      message: 'TimeOff refusé avec succès.',
+      timeOff: updatedTimeOff,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erreur serveur lors du refus du TimeOff.' });
+  }
+};
+
+
 module.exports = {
     deleteTimeOff,
     updateTimeOff,
@@ -195,6 +249,8 @@ module.exports = {
     getAllTimeOffs,
     createTimeOff,
     getRemainingTimeOff,
-    getEmployeeWithTimeOffs
+    getEmployeeWithTimeOffs,
+    approveTimeOff,
+    rejectTimeOff
 
 }

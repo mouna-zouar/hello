@@ -2,10 +2,12 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const {getTeamById} = require ("../services/equipeService");
 const {getBacklogById} = require ("../services/backlogService");
+const {getUserById} = require ("../services/userService");
+
 const { checkTeamExistence ,checkBacklogExistence} = require('../kafka/producers');
 const {projectSchema} = require("../validators/projectSchema");
 
-const createProject = async (req, res) => {
+/*const createProject = async (req, res) => {
     const { name, description, type, teamId, status,backlogId } = req.body;
     try {
         const parsed = projectSchema.safeParse({ name, description, type, teamId, status,backlogId });
@@ -13,7 +15,7 @@ const createProject = async (req, res) => {
             return res.status(400).json({ error: parsed.error.errors });
         }
 
-        /*if (teamId) {
+        if (teamId) {
             const { exists: teamExists } = await checkTeamExistence(teamId);
             if (!teamExists) {
                 return res.status(404).json({ error: "Équipe non trouvée via Kafka." });
@@ -25,7 +27,7 @@ const createProject = async (req, res) => {
             if (!backlogExists) {
                 return res.status(404).json({ error: "Backlog non trouvé via Kafka." });
             }
-        }*/
+        }
         const team = await getTeamById(teamId);
         if (!team) {
             return res.status(404).json({ error: 'team introuvable.' });
@@ -45,6 +47,52 @@ const createProject = async (req, res) => {
                 teamId,
                 backlogId,
                 status: status || "ONGOING"
+            },
+        });
+
+        res.status(201).json(newProject);
+    } catch (error) {
+        console.error('Erreur lors de la création du projet:', error);
+        res.status(500).json({ message: 'Erreur lors de la création du projet' });
+    }
+};*/
+const createProject = async (req, res) => {
+    const { name, description, type, teamId, status, backlogId, userId } = req.body;
+
+    try {
+        const parsed = projectSchema.safeParse({ name, description, type, teamId, status, backlogId, userId });
+        if (!parsed.success) {
+            return res.status(400).json({ error: parsed.error.errors });
+        }
+
+        const team = await getTeamById(teamId);
+        if (!team) {
+            return res.status(404).json({ error: 'Équipe introuvable.' });
+        }
+
+        const backlog = await getBacklogById(backlogId);
+        if (!backlog) {
+            return res.status(404).json({ error: 'Backlog introuvable.' });
+        }
+
+        if (userId) {
+            const user = await getUserById(userId);
+            if (!user) {
+                return res.status(404).json({ error: 'user introuvable.' });
+            }
+        }
+
+        console.log(" Requête reçue avec body :", req.body);
+
+        const newProject = await prisma.project.create({
+            data: {
+                name,
+                description,
+                type,
+                teamId,
+                backlogId,
+                status: status || "ONGOING",
+                userId: userId || null,
             },
         });
 
@@ -182,7 +230,6 @@ const assignProjectToTeam = async (req, res) => {
     }
 };
 
-
 const deleteProject = async (req, res) => {
     const { id } = req.params;
 
@@ -205,11 +252,52 @@ const deleteProject = async (req, res) => {
     }
 };
 
+const getProjectsByUserId = async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const projects = await prisma.project.findMany({
+            where: { userId: parseInt(userId) },
+        });
+
+        if (projects.length === 0) {
+            return res.status(404).json({ message: 'Aucun projet trouvé pour cet user' });
+        }
+
+        res.status(200).json({ data: projects });
+    } catch (error) {
+        console.error('Erreur lors de la récupération des projets de l\'user:', error);
+        res.status(500).json({ message: 'Erreur serveur lors de la récupération des projets de l\'employé' });
+    }
+};
+
+const getProjectsByTeamId = async (req, res) => {
+    const { teamId } = req.params;
+
+    try {
+        const projects = await prisma.project.findMany({
+            where: { teamId: parseInt(teamId) },
+        });
+
+        if (projects.length === 0) {
+            return res.status(404).json({ message: 'Aucun projet trouvé pour cette équipe' });
+        }
+
+        res.status(200).json({ data: projects });
+    } catch (error) {
+        console.error('Erreur lors de la récupération des projets de l\'équipe:', error);
+        res.status(500).json({ message: 'Erreur serveur lors de la récupération des projets de l\'équipe' });
+    }
+};
+
+
 module.exports = {
     createProject,
     getAllProjects,
     getProjectById,
     updateProject,
     deleteProject,
-    assignProjectToTeam
+    assignProjectToTeam,
+    getProjectsByUserId,
+    getProjectsByTeamId
 };

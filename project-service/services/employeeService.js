@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const employeeServiceUrl = "http://localhost:3012/api/employees"; // Ajuste l'URL de l'API Employé
+const employeeServiceUrl = "http://localhost:3012/api/employees";
 
 const getEmployeeById = async (employeeId) => {
     try {

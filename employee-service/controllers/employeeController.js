@@ -8,12 +8,11 @@ const prisma = new PrismaClient();
 
 const getEmployeeWithUser = async (req, res) => {
     try {
-        const { id } = req.params;
-
-        const employee = await prisma.employee.findUnique({ where: { id: parseInt(id) } });
+        const id = parseInt(req.params.id, 10);
+        const employee = await prisma.employee.findUnique({ where: { id } });
         if (!employee) return res.status(404).json({ error: "Employé non trouvé" });
 
-        const user = await checkUserExistence(employee.id);
+        const user = await getUserById(employee.id);
         if (!user) return res.status(404).json({ error: "Utilisateur non trouvé dans le service Auth" });
 
         res.json({

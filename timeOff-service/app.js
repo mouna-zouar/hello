@@ -3,11 +3,15 @@ const bodyParser = require('body-parser');
 const timeOffRoutes = require('./Routes/timeOffRoutes');
 const {initKafkaRequestResponse} = require('./Kafka/producers');
 require('dotenv').config();
+const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT;
 app.use(bodyParser.json());
-
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+}));
 app.use('/api/timeoffs', timeOffRoutes);
 
 (async () => {

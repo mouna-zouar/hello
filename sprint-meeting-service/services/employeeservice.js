@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const getEmployeeById = async (employeeId) => {
     try {
-        const url = `http://localhost:3002/employees/${employeeId}`;
+        const url = `http://localhost:3012/api/employees/employee/${employeeId}`;
         console.log(`🔍 Requête envoyée à : ${url}`);
         const response = await axios.get(url);
         if (response.data) {
@@ -15,10 +15,25 @@ const getEmployeeById = async (employeeId) => {
         throw error;
     }
 };
+const getEmployeeWithUserById = async (employeeId) => {
+    try {
+        const url = `http://localhost:3012/api/employees/employee-with-user/${employeeId}`;
+        console.log(`🔍 Requête envoyée à : ${url}`);
+        const response = await axios.get(url);
+        if (response.data) {
+            return response.data;
+        } else {
+            throw new Error("Employé avec utilisateur non trouvé");
+        }
+    } catch (error) {
+        console.error("Erreur lors de la récupération de l'employé avec utilisateur:", error);
+        throw error;
+    }
+};
 
 const updateEmployee = async (employeeId, updatedData) => {
     try {
-        const url = `http://localhost:3002/employees/${employeeId}`;
+        const url = `http://localhost:3012/api/employees/${employeeId}`;
         console.log(`🔧 Requête envoyée à : ${url}`);
         const response = await axios.put(url, updatedData);
         if (response.data) {
@@ -32,4 +47,4 @@ const updateEmployee = async (employeeId, updatedData) => {
     }
 };
 
-module.exports = { getEmployeeById, updateEmployee };
+module.exports = { getEmployeeById, updateEmployee,getEmployeeWithUserById };

@@ -15,12 +15,14 @@ exports.getAllRoles = async (req, res) => {
         res.status(500).json({ error: "Erreur lors de la récupération des rôles" });
     }
 };
-
 exports.createRole = async (req, res) => {
     const { role, departmentId } = req.body;
     try {
         const newRole = await prisma.role.create({
-            data: { role, departmentId }
+            data: {
+                role,
+                departmentId: parseInt(departmentId)  // <- forcer un entier ici
+            }
         });
         await produceEvent(EVENTS.ROLE_CREATED, newRole);
         res.status(201).json(newRole);
@@ -28,6 +30,7 @@ exports.createRole = async (req, res) => {
         res.status(500).json({ error: "Erreur lors de la création du rôle" });
     }
 };
+
 
 exports.updateRole = async (req, res) => {
     const { id } = req.params;
