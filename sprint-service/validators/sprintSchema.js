@@ -10,8 +10,6 @@ const createSprintSchema = z.object({
 
 const updateSprintSchema = z.object({
     name: z.string().optional(),
-    startDate: z.string().optional().refine(val => !isNaN(Date.parse(val)), { message: "Date de début invalide." }),
-    endDate: z.string().optional().refine(val => !isNaN(Date.parse(val)), { message: "Date de fin invalide." }),
     projectId: z.number().int().positive().optional(),
     backlogId: z.number().int().positive().optional()
 });

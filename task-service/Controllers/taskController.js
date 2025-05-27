@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { getProjectById } = require('../services/projectService');
+const { getProjectById,updateProjectStatusService } = require('../services/projectService');
 const { getBacklogById } = require('../services/backlogService');
 const { getSprintById } = require('../services/sprintService');
 const {getEmployeeById} = require('../services/employeeService');
@@ -79,7 +79,7 @@ const createTask = async (req, res) => {
                 assignedTo
             }
         });
-
+        await updateProjectStatusService(projectId, { status: newTask.status });
         res.status(201).json({ message: "Tâche créée avec succès", task: newTask });
     } catch (error) {
 
@@ -119,26 +119,26 @@ const updateTask = async (req, res) => {
     try {
         const validatedData = taskSchema.partial().parse(req.body);
 
-        const { title, description, priority, status, type, startDate, endDate, progress, projectId, backlogId, sprintId, parentId, assignedTo } = validatedData;
+        const {  projectId, backlogId, sprintId, assignedTo } = validatedData;
 
-        const [backlogExistence, projectExistence, sprint, employee] = await Promise.all([
+        const [backlogExistence, project, sprint, employee] = await Promise.all([
             checkBacklogExistence(backlogId),
-            checkProjectExistence(projectId),
+            getProjectById(projectId),
             checkSprintExistence(sprintId),
             checkEmployeeExistence(assignedTo)
         ]);
 
         if (!backlogExistence.exists) return res.status(404).json({ error: 'Le backlog n\'a pas été trouvé.' });
-        if (!projectExistence.exists) return res.status(404).json({ error: 'Le projet n\'a pas été trouvé.' });
+        if (!project) return res.status(404).json({ error: 'Le projet n\'a pas été trouvé.' });
         if (!sprint || !employee) return res.status(404).json({ error: 'Sprint ou employé non trouvé.' });
 
         const updatedTask = await prisma.task.update({
             where: {
-                id: req.params.id,
+                  id: parseInt(req.params.id, 10)
             },
             data: validatedData,
         });
-
+        await updateProjectStatusService(projectId, { status: updatedTask.status });
         res.status(200).json({ message: 'Tâche mise à jour avec succès', task: updatedTask });
     } catch (error) {
 
@@ -158,7 +158,6 @@ const deleteTask = async (req, res) => {
         }
 
         await prisma.task.delete({ where: { id: parseInt(id) } });
-
         res.status(200).json({ message: "Tâche supprimée avec succès" });
     } catch (error) {
         console.error('Erreur lors de la suppression de la tâche:', error);
@@ -239,9 +238,9 @@ const updateTaskStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    console.log('Statut reçu:', status); // Log pour vérifier le statut envoyé par le frontend
+    console.log('Statut reçu:', status); 
 
-    if (!["TODO", "IN_PROGRESS", "DONE"].includes(status)) {
+    if (!["TO_DO", "IN_PROGRESS", "DONE"].includes(status)) {
         return res.status(400).json({ error: "Statut invalide" });
     }
 
@@ -250,7 +249,7 @@ const updateTaskStatus = async (req, res) => {
             where: { id: parseInt(id) },
             data: { status }
         });
-
+        await updateProjectStatus(updatedTask.projectId);
         res.status(200).json({ message: "Statut mis à jour", task: updatedTask });
     } catch (error) {
         console.error('Erreur lors de la mise à jour du statut:', error);
@@ -554,9 +553,23 @@ const getEpicsBySprintId = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la récupération des Epics." });
     }
 };
+const updateProjectStatus = async (projectId) => {
+  try {
+    const tasks = await prisma.task.findMany({
+      where: { projectId: parseInt(projectId) },
+      select: { status: true },
+    });
 
+    if (!tasks || tasks.length === 0) return; 
 
+    const allDone = tasks.every(task => task.status === "DONE");
+    const newStatus = allDone ? "DONE" : "IN_PROGRESS";
 
+    await updateProjectStatusService(projectId, { status: newStatus });
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour du statut du projet :", error);
+  }
+};
 module.exports = {
     createTask,
     getAllTasks,
@@ -581,5 +594,6 @@ module.exports = {
     assignTaskToEmployee,
     getTasksWithEpicsBySprintId,
     getTasksBySprintIdAndProjectId,
-    getTaskWithDetailsById
+    getTaskWithDetailsById,
+    updateProjectStatus
 };

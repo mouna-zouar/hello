@@ -73,10 +73,10 @@ const getSprintById = async (req, res) => {
 
 const updateSprint = async (req, res) => {
     const { id } = req.params;
-    const { name, startDate, endDate, projectId, backlogId } = req.body;
+    const { name, projectId, backlogId } = req.body;
 
     try {
-        updateSprintSchema.parse({ name, startDate, endDate, projectId, backlogId });
+        updateSprintSchema.parse({ name, projectId, backlogId });
 
         const sprint = await prisma.sprint.findUnique({ where: { id: parseInt(id) } });
 
@@ -102,8 +102,6 @@ const updateSprint = async (req, res) => {
             where: { id: parseInt(id) },
             data: {
                 name: name || sprint.name,
-                startDate: startDate ? new Date(startDate) : sprint.startDate,
-                endDate: endDate ? new Date(endDate) : sprint.endDate,
                 projectId: projectId ? parseInt(projectId) : sprint.projectId,
                 backlogId: backlogId ? parseInt(backlogId) : sprint.backlogId,
             }
@@ -200,7 +198,7 @@ const closeSprint = async (req, res) => {
 
         console.log(`Sprint récupéré :`, sprint);
 
-        const project = await checkProjectExistence(sprint.projectId);
+        const project = await getProjectById(sprint.projectId);
         if (!project) {
             console.error(`Projet non trouvé pour l'ID ${sprint.projectId}`);
             return res.status(404).json({ error: 'Projet non trouvé' });
@@ -217,7 +215,7 @@ const closeSprint = async (req, res) => {
         const tasks = await getTasksBySprintId(id);
         console.log(`Tâches du sprint ${id} récupérées :`, tasks);
 
-        const unfinishedTasks = tasks.filter(task => task.status !== 'Done');
+        const unfinishedTasks = tasks.data.filter(task => task.status !== 'Done');
         console.log(`Tâches non terminées :`, unfinishedTasks);
 
         let nextSprint = await prisma.sprint.findFirst({

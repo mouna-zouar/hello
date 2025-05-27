@@ -140,25 +140,21 @@ const updateProject = async (req, res) => {
     const { name, description, type, status, backlogId, teamId } = req.body;
 
     try {
-        // Valider les données avec Zod
         const parsed = projectSchema.safeParse({ name, description, type, teamId, status, backlogId });
         if (!parsed.success) {
             return res.status(400).json({ error: parsed.error.errors });
         }
 
-        // Vérifier si l'équipe existe
         const team = await checkTeamExistence(teamId);
         if (!team) {
             return res.status(404).json({ error: "L'équipe avec l'ID fourni n'a pas été trouvée." });
         }
 
-        // Vérifier si le backlog existe
         const backlog = await checkBacklogExistence(backlogId);
         if (!backlog) {
             return res.status(404).json({ error: "Backlog avec l'ID fourni n'a pas été trouvée." });
         }
 
-        // Vérifier si le projet existe avant la mise à jour
         const existingProject = await prisma.project.findUnique({
             where: { id: parseInt(id) },
         });
@@ -167,7 +163,6 @@ const updateProject = async (req, res) => {
             return res.status(404).json({ error: "Projet avec l'ID fourni non trouvé." });
         }
 
-        // Mise à jour du projet
         const updatedProject = await prisma.project.update({
             where: { id: parseInt(id) },
             data: {
@@ -289,6 +284,37 @@ const getProjectsByTeamId = async (req, res) => {
         res.status(500).json({ message: 'Erreur serveur lors de la récupération des projets de l\'équipe' });
     }
 };
+const updateProjectStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+        return res.status(400).json({ error: "Le champ 'status' est requis" });
+    }
+
+    try {
+        const existingProject = await prisma.project.findUnique({
+            where: { id: parseInt(id) },
+        });
+
+        if (!existingProject) {
+            return res.status(404).json({ error: "Projet non trouvé" });
+        }
+
+        const updatedProject = await prisma.project.update({
+            where: { id: parseInt(id) },
+            data: { status },
+        });
+
+        res.status(200).json({
+            message: "Statut du projet mis à jour avec succès",
+            data: updatedProject,
+        });
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour du statut du projet:", error);
+        res.status(500).json({ message: "Erreur serveur lors de la mise à jour du statut du projet" });
+    }
+};
 
 
 module.exports = {
@@ -299,5 +325,6 @@ module.exports = {
     deleteProject,
     assignProjectToTeam,
     getProjectsByUserId,
-    getProjectsByTeamId
+    getProjectsByTeamId,
+    updateProjectStatus
 };

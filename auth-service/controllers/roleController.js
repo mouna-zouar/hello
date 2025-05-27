@@ -132,3 +132,56 @@ exports.getRoleById = async (req, res) => {
     }
 };
 
+exports.updateRoleWithPermissions = async (req, res) => {
+    const { id } = req.params;
+    const { role, departmentId, permissions } = req.body;
+
+    if (!Array.isArray(permissions)) {
+        return res.status(400).json({ error: "permissions doit être un tableau" });
+    }
+
+    try {
+        // 1. Mettre à jour les infos du rôle
+        const updatedRole = await prisma.role.update({
+            where: { id: parseInt(id) },
+            data: {
+                role,
+                departmentId: parseInt(departmentId)
+            }
+        });
+
+        // 2. Supprimer toutes les permissions actuelles de ce rôle
+        await prisma.rolePermission.deleteMany({
+            where: { roleId: parseInt(id) }
+        });
+
+        // 3. Ajouter les nouvelles permissions
+        const rolePermissions = permissions.map(permissionId => ({
+            roleId: parseInt(id),
+            permissionId: parseInt(permissionId)
+        }));
+
+        await prisma.rolePermission.createMany({
+            data: rolePermissions,
+            skipDuplicates: true
+        });
+
+        // 4. Émettre l'événement
+        await produceEvent(EVENTS.ROLE_UPDATED, {
+            roleId: parseInt(id),
+            updatedFields: {
+                role,
+                departmentId,
+                permissions
+            }
+        });
+
+        res.status(200).json({ message: "Rôle et permissions mis à jour avec succès", updatedRole });
+
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour complète du rôle :", error);
+        res.status(500).json({ error: "Erreur lors de la mise à jour du rôle avec permissions" });
+    }
+};
+
+

@@ -5,6 +5,22 @@ const { getTasksByEmployee } = require('../services/taskservice');
 const {checkEmployeeExistence} = require('../kafka/producers');
 const salarySchema = require("../validators/salarySchema");
 
+const getAllSalaries = async (req, res) => {
+    try {
+        const salaries = await prisma.salary.findMany();
+
+        if (!salaries || salaries.length === 0) {
+            return res.status(404).json({ error: 'Aucun salaire trouvé' });
+        }
+
+        res.status(200).json({ data: salaries });
+    } catch (error) {
+        console.error("Erreur getAllSalaries :", error.message);
+        res.status(500).json({ error: "Erreur lors de la récupération des salaires" });
+    }
+};
+
+
 const getSalary = async (req, res) => {
     const { employeeId } = req.params;
 
@@ -108,7 +124,8 @@ const updateBaseSalary = async (req, res) => {
     }
 
     try {
-        const existingSalary = await prisma.salary.findUnique({
+        // Recherche du salaire avec employeeId (utilise findFirst car employeeId n'est pas unique)
+        const existingSalary = await prisma.salary.findFirst({
             where: { employeeId: Number(employeeId) },
         });
 
@@ -116,9 +133,10 @@ const updateBaseSalary = async (req, res) => {
             return res.status(404).json({ error: "Salaire non trouvé pour cet employé" });
         }
 
+        // Mise à jour via la clé primaire 'id'
         const updatedSalary = await prisma.salary.update({
-            where: { employeeId: Number(employeeId) },
-            data: { baseSalary, updatedAt: new Date() }
+            where: { id: existingSalary.id },
+            data: { baseSalary, updatedAt: new Date() },
         });
 
         res.status(200).json(updatedSalary);
@@ -127,6 +145,7 @@ const updateBaseSalary = async (req, res) => {
         res.status(500).json({ error: "Erreur lors de la mise à jour du salaire de base" });
     }
 };
+
 
 const getEmployeeWithSalary = async (req, res) => {
     const { employeeId } = req.params;
@@ -150,10 +169,35 @@ const getEmployeeWithSalary = async (req, res) => {
         res.status(500).json({ error: "Erreur lors de la récupération des données de l'employé et de son salaire" });
     }
 };
+const deleteSalary = async (req, res) => {
+    const { employeeId } = req.params;
+
+    try {
+        const existingSalary = await prisma.salary.findUnique({
+            where: { employeeId: Number(employeeId) },
+        });
+
+        if (!existingSalary) {
+            return res.status(404).json({ error: "Salaire non trouvé pour cet employé" });
+        }
+
+        await prisma.salary.delete({
+            where: { employeeId: Number(employeeId) },
+        });
+
+        res.status(200).json({ message: "Salaire supprimé avec succès" });
+    } catch (error) {
+        console.error("Erreur deleteSalary :", error.message);
+        res.status(500).json({ error: "Erreur lors de la suppression du salaire" });
+    }
+};
 
 module.exports = {
     getSalary,
     calculateTotalSalary,
     createBaseSalary,
-    updateBaseSalary
+    updateBaseSalary,
+    getAllSalaries,
+    getEmployeeWithSalary,
+    deleteSalary
 };

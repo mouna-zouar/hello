@@ -6,16 +6,13 @@ const {checkEmployeeExistence}=require('../kafka/producers');
 
 const getAllTeamsWithEmployees = async (req, res) => {
     try {
-        // Récupère toutes les équipes
         const teams = await prisma.team.findMany();
 
-        // Récupère toutes les équipes avec les employés associés
         const teamsWithEmployees = await Promise.all(
             teams.map(async (team) => {
                 try {
                     const employeesResponse = await axios.get(`http://localhost:3012/api/employees/team?teamId=${team.id}`);
 
-                    // Enrichir chaque employé avec les informations de l'utilisateur
                     const employeesWithUserDetails = await Promise.all(
                         employeesResponse.data.map(async (employee) => {
                             try {
@@ -63,8 +60,6 @@ const getAllTeamsWithEmployees = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la récupération des équipes" });
     }
 };
-
-
 
 const searchTeamByName = async (req, res) => {
     const { name } = req.query;
@@ -227,6 +222,51 @@ const deleteTeam = async (req, res) => {
     }
 };*/
 
+const getTeamStatistics = async (req, res) => {
+    try {
+        const teams = await prisma.team.findMany();
+        const stats = {
+            totalTeams: teams.length,
+            teams: [],
+            averageEmployeesPerTeam: 0,
+            maxEmployeesTeam: null,
+        };
+
+        let totalEmployees = 0;
+        let maxEmployees = 0;
+
+        for (const team of teams) {
+            const employeesResponse = await axios.get(`http://localhost:3012/api/employees/team?teamId=${team.id}`);
+            const employeeCount = employeesResponse.data.length;
+
+            totalEmployees += employeeCount;
+
+            stats.teams.push({
+                teamId: team.id,
+                teamName: team.name,
+                employeeCount
+            });
+
+            if (employeeCount > maxEmployees) {
+                maxEmployees = employeeCount;
+                stats.maxEmployeesTeam = {
+                    teamId: team.id,
+                    teamName: team.name,
+                    employeeCount
+                };
+            }
+        }
+
+        stats.averageEmployeesPerTeam = teams.length ? (totalEmployees / teams.length).toFixed(2) : 0;
+
+        res.status(200).json({ data: stats });
+    } catch (error) {
+        console.error('Erreur lors du calcul des statistiques:', error);
+        res.status(500).json({ error: "Erreur serveur lors du calcul des statistiques" });
+    }
+};
+
+
 module.exports = {
     searchTeamByName,
     createTeam,
@@ -235,4 +275,5 @@ module.exports = {
     updateTeam,
     deleteTeam,
     getAllTeamsWithEmployees,
+    getTeamStatistics,
 };

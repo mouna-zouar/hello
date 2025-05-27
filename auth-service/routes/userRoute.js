@@ -2,6 +2,7 @@ const express = require("express");
 const authMiddleware = require("../middlewares/authMiddleware"); // Importer le middleware
 const rateLimit = require("express-rate-limit");
 const checkPermission = require("../middlewares/check");
+const authWithRoleAndDepartment = require("../middlewares/authWithRoleAndDepartment");
 
 const userController = require('../controllers/userControllers');
 
@@ -20,7 +21,7 @@ router.post('/reset-password', userController.resetPassword);
 
 // Utilisateurs
 
-router.get("/",  async (req, res) => {
+router.get("/", async (req, res) => {
     try {
         await userController.getAllUsers(req, res);
     } catch (error) {
@@ -28,12 +29,15 @@ router.get("/",  async (req, res) => {
         res.status(500).json({ error: "Erreur lors de la récupération des utilisateurs" });
     }
 });
-router.get("/:id", userController.getUserById);
+router.get("/:id",  userController.getUserById);
 router.delete("/:id", userController.deleteUser);
 router.post("/verify", userController.verifyTokenAndPermissions);
 router.put('/:id', userController.updateUser);
+router.get("/me", async (req, res) => {
+  res.json(req.user); // renvoie les infos déjà injectées dans req.user
+});
 
 //Session
-router.get("/sessions/:userId",userController.getUserSessions);
+router.get("/sessions/:userId", authWithRoleAndDepartment("User", "VIEW"), userController.getUserSessions);
 
 module.exports = router;

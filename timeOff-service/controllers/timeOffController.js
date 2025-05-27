@@ -1,5 +1,5 @@
 const { PrismaClient, TimeOffStatus, TimeOffType } =require ('@prisma/client');
-const { getEmployeeById } =require ('../services/employeeservice');
+const { getEmployeeById,getAllEmployees } =require ('../services/employeeservice');
 const {createTimeOffSchema,updateTimeOffSchema} = require("../validators/timeOffSchema");
 
 const prisma = new PrismaClient();
@@ -107,6 +107,7 @@ const updateTimeOff = async (req, res) => {
         res.status(500).json({ error: 'Erreur serveur lors de la mise à jour du TimeOff.' });
     }
 };
+
  const deleteTimeOff = async (req, res) => {
     const { id } = req.params;
 
@@ -202,7 +203,7 @@ const approveTimeOff = async (req, res) => {
 
     const updatedTimeOff = await prisma.timeOff.update({
       where: { id: parseInt(id) },
-      data: { status: TimeOffStatus.APPROVED },
+      data: { status: TimeOffStatus.APPROUVE },
     });
 
     res.status(200).json({
@@ -214,6 +215,7 @@ const approveTimeOff = async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur lors de l\'approbation du TimeOff.' });
   }
 };
+
 const rejectTimeOff = async (req, res) => {
   const { id } = req.params;
 
@@ -228,7 +230,7 @@ const rejectTimeOff = async (req, res) => {
 
     const updatedTimeOff = await prisma.timeOff.update({
       where: { id: parseInt(id) },
-      data: { status: TimeOffStatus.REJECTED },
+      data: { status: TimeOffStatus.REFUSE },
     });
 
     res.status(200).json({
@@ -242,6 +244,36 @@ const rejectTimeOff = async (req, res) => {
 };
 
 
+const getEmployeesByTimeOffStatus = async (req, res) => {
+    try {
+        const today = new Date();
+
+        const employees = await getAllEmployees();
+
+        const activeTimeOffs = await prisma.timeOff.findMany({
+            where: {
+                status: { in: [TimeOffStatus.EN_ATTENTE, TimeOffStatus.APPROUVE] },
+                startDate: { lte: today },
+                endDate: { gte: today }
+            },
+            select: { employeeId: true }
+        });
+
+        const employeesOnLeaveIds = activeTimeOffs.map(t => t.employeeId);
+        const employeesOnLeave = employees.filter(e => employeesOnLeaveIds.includes(e.id));
+        const employeesNotOnLeave = employees.filter(e => !employeesOnLeaveIds.includes(e.id));
+
+        res.status(200).json({
+            date: today,
+            employeesOnLeave,
+            employeesNotOnLeave
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Erreur lors de la récupération des employés en congé ou disponibles." });
+    }
+};
+
 module.exports = {
     deleteTimeOff,
     updateTimeOff,
@@ -251,6 +283,7 @@ module.exports = {
     getRemainingTimeOff,
     getEmployeeWithTimeOffs,
     approveTimeOff,
-    rejectTimeOff
+    rejectTimeOff,
+    getEmployeesByTimeOffStatus
 
 }

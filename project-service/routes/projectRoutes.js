@@ -23,4 +23,7 @@ router.get('/user/:userId', projectController.getProjectsByUserId);
 
 router.get('/team/:teamId', projectController.getProjectsByTeamId);
 
+router.put('/:id/status', projectController.updateProjectStatus);
+
+
 module.exports = router;

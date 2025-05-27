@@ -22,6 +22,7 @@ app.use(cors({
 }));
 app.use(helmet());
 app.use(bodyParser.json());
+app.use(express.json());
 
 app.use('/api/roles', roleRoutes);
 app.use('/api/users', userRoutes);

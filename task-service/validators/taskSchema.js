@@ -4,7 +4,7 @@ const taskSchema = z.object({
   title: z.string().min(1, 'Le titre est requis'),
   description: z.string().optional(),
   priority: z.string().min(1, 'La priorité est requise').optional(),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'DONE'], 'Le statut est invalide'),
+  status: z.enum(['TO_DO', 'IN_PROGRESS', 'DONE'], 'Le statut est invalide'),
   type: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),

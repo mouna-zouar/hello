@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const produceEvent = require("../kafka/kafkaProducer");
 const { registerSchema, loginSchema } = require("../validators/userValidator");
 const EVENTS = require('../constants/events');
+const { permission } = require('process');
 require("dotenv").config();
 
 const prisma = new PrismaClient();
@@ -56,7 +57,16 @@ const login = async (req, res) => {
         // Vérifie si l'utilisateur existe
         const user = await prisma.user.findUnique({
             where: { email },
-            select: { id: true, email: true, password: true, roleId: true } // Récupère uniquement les informations nécessaires
+            include: {
+                role: {
+                    include: {
+                        permissions: {
+                            include: { permission: true }
+                        }
+                    }
+                },
+                department: true
+            }
         });
 
         if (!user) {
@@ -71,30 +81,32 @@ const login = async (req, res) => {
 
         // Crée les tokens
         const accessToken = jwt.sign(
-            { id: user.id, role: user.roleId },
+            { id: user.id, role: user.role.role },
             process.env.JWT_SECRET,
-            { expiresIn: "1h" }
+            { expiresIn: "5d" }
         );
         const refreshToken = jwt.sign(
-            { id: user.id, role: user.roleId },
+            { id: user.id, role: user.role.role },
             process.env.JWT_SECRET,
             { expiresIn: "3d" }
         );
 
-        // Récupère l'User-Agent et l'IP
-        const userAgent = req.get('User-Agent') || "Unknown User-Agent";
-        const ipAddress = req.ip || "Unknown IP";
-
-        // Log les informations de session dans la base de données
+        // Log la session
         await prisma.sessionLog.create({
             data: {
                 userId: user.id,
-                userAgent: userAgent,
-                ipAddress: ipAddress
+                userAgent: req.get('User-Agent') || 'Unknown User-Agent',
+                ipAddress: req.ip || 'Unknown IP'
             }
         });
 
-        // Répond avec les tokens et les informations utilisateur
+        // Formater les permissions
+        const permissions = user.role.permissions.map(rp => ({
+            model: rp.permission.model,
+            operation: rp.permission.operation
+        }));
+
+        // Répondre
         res.json({
             message: "Connexion réussie",
             accessToken,
@@ -102,7 +114,9 @@ const login = async (req, res) => {
             user: {
                 id: user.id,
                 email: user.email,
-                role: user.roleId // Ajouter ici d'autres informations que tu veux exposer
+                role: user.role.role,
+                department: user.department?.name || null,
+                permissions
             }
         });
     } catch (error) {
@@ -110,6 +124,7 @@ const login = async (req, res) => {
         res.status(400).json({ error: error.message || "Erreur lors de la connexion" });
     }
 };
+
 
 /*const getAllUsers = async (req, res) => {
     try {
@@ -269,7 +284,8 @@ const verifyTokenAndPermissions = async (req, res) => {
                             include: { permission: true }
                         }
                     }
-                }
+                },
+                department: true
             }
         });
 
@@ -280,16 +296,38 @@ const verifyTokenAndPermissions = async (req, res) => {
             operation: rp.permission.operation
         }));
 
-        return res.json({
-            id: user.id,
-            role: user.role.role,
-            permissions
+        // Génération d'un nouveau token
+        const refreshedToken = jwt.sign(
+            { id: user.id, role: user.role.role },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+        );
+
+        return res.status(200).json({
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                photo: user.photo,
+                gender: user.gender,
+                status: user.status,
+                role: {
+                    id: user.role.id,
+                    name: user.role.role,
+                },
+                department: user.department,
+                permissions
+            },
+            token: refreshedToken
         });
     } catch (err) {
-        console.error(err);
+        console.error("Erreur de vérification de token :", err);
         return res.status(401).json({ error: "Token invalide" });
     }
 };
+
 
 const updateUser = async (req, res) => {
     try {

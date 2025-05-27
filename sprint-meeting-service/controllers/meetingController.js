@@ -99,9 +99,9 @@ const updateSprintMeeting = async (req, res) => {
 
     try {
         const [project, task, sprint] = await Promise.all([
-            parsedProjectId ? checkProjectExistence(parsedProjectId) : null,
+            parsedProjectId ? getProjectById(parsedProjectId) : null,
             parsedTaskId ? checkTaskExistence(parsedTaskId) : null,
-            parsedSprintId ? checkSprintExistence(parsedSprintId) : null
+            parsedSprintId ? getSprintById(parsedSprintId) : null
         ]);
 
         if ((parsedProjectId && !project) || (parsedTaskId && !task) || (parsedSprintId && !sprint)) {
