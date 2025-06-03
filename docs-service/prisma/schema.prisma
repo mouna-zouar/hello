@@ -1,15 +1,56 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model Page {
+  id        Int           @id @default(autoincrement())
+  title     String
+  content   String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  projectId Int?
+  userId    Int?
+
+  versions  PageVersion[]
+  accesses  PageAccess[]
+}
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int     
+  title     String
+  message   String
+  type      String   
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+model PageVersion {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  pageId    Int
+  createdBy Int
+
+  page Page @relation(fields: [pageId], references: [id])
+}
+
+model PageAccess {
+  id     Int    @id @default(autoincrement())
+  pageId Int
+  userId Int?
+  role   String 
+  page Page @relation(fields: [pageId], references: [id])
+}
+model Message {
+  id         Int      @id @default(autoincrement())
+  content    String
+  senderId   Int
+  receiverId Int?   
+  userId     Int?
+  createdAt  DateTime @default(now())
+}
+
