@@ -2,7 +2,7 @@ const axios = require('axios');
 const { checkEmployeeExistence } = require('../kafka/producers'); // Assurez-vous d'importer la fonction Kafka
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-
+const {getEmployeeById} = require ("../services/employeeService");
 
 const createProjectEmployeeRelation = async (req, res) => {
     const { projectId, employeeId } = req.body;
@@ -14,11 +14,11 @@ const createProjectEmployeeRelation = async (req, res) => {
     try {
         console.log(`Vérification de l'existence de l'employé avec ID: ${employeeId}`);
 
-        const employeeExistenceResponse = await checkEmployeeExistence(employeeId);
+        const employee = await getEmployeeById(employeeId);
 
-        console.log(`Réponse de vérification d'existence d'employé:`, employeeExistenceResponse);
+        console.log(`Réponse de vérification d'existence d'employé:`, employee);
 
-        if (!employeeExistenceResponse.exists) {
+        if (!employee) {
             console.log(`Employé avec ID ${employeeId} non trouvé`);
             return res.status(404).json({ error: "Employé non trouvé dans le microservice Employé" });
         }
@@ -42,6 +42,31 @@ const createProjectEmployeeRelation = async (req, res) => {
     }
 };
 
+const getProjectsByEmployeeId = async (req, res) => {
+  const { employeeId } = req.params;
+
+  try {
+    // Trouver toutes les relations projet-employé pour cet employé avec les projets inclus
+    const projectEmployees = await prisma.projectEmployee.findMany({
+      where: { employeeId: parseInt(employeeId, 10) },
+      include: {
+        project: true,  // inclut les données du projet lié
+      },
+    });
+
+    if (projectEmployees.length === 0) {
+      return res.status(404).json({ error: "Aucun projet trouvé pour cet employé" });
+    }
+
+    // Extraire uniquement les projets
+    const projects = projectEmployees.map(pe => pe.project);
+
+    res.status(200).json({ data: projects });
+  } catch (error) {
+    console.error("Erreur lors de la récupération des projets liés à l'employé :", error.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+};
 
 const getEmployeesByProjectId = async (req, res) => {
     const { projectId } = req.params;
@@ -72,5 +97,6 @@ const getEmployeesByProjectId = async (req, res) => {
 module.exports = {
     createProjectEmployeeRelation,
     getEmployeesByProjectId,
+    getProjectsByEmployeeId
 
 };

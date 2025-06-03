@@ -48,7 +48,7 @@ model TaskDependency {
 model Column {
   id        Int     @id @default(autoincrement())
   name      String?
-  status    String?  @unique
+  status    String?  
   limit     Int?   @default(5)
 
   tasks     Task[]   @relation("ColumnTasks")

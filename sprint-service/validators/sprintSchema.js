@@ -4,9 +4,8 @@ const { z } = require('zod');
 const createSprintSchema = z.object({
     name: z.string().min(1, { message: "Le nom est requis." }), // Le nom est requis
 
-    projectId: z.number().int().positive({ message: "L'ID du projet doit être un entier positif." }), // Validation de l'ID du projet
-    backlogId: z.number().int().positive({ message: "L'ID du backlog doit être un entier positif." }) // Validation de l'ID du backlog
-});
+ projectId: z.preprocess(val => Number(val), z.number()),
+  backlogId: z.preprocess(val => Number(val), z.number()),});
 
 const updateSprintSchema = z.object({
     name: z.string().optional(),

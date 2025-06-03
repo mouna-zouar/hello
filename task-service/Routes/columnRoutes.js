@@ -8,4 +8,6 @@ router.get('/:status', columnController.getColumnByStatus)
 
 router.put('/:status/limit', columnController.updateColumnLimit)
 
+router.post('/default', columnController.createDefaultColumns)
+
 module.exports = router

@@ -48,45 +48,61 @@ const getTaskWithDetailsById = async (req, res) => {
   }
 };
 
-
 const createTask = async (req, res) => {
-    try {
-        const validatedData = taskSchema.parse(req.body);
+  try {
+    const validatedData = taskSchema.parse(req.body);
+    const {
+      title,
+      description,
+      priority,
+      status,
+      type,
+      startDate,
+      endDate,
+      progress,
+      projectId,
+      backlogId,
+      sprintId,
+      parentId,
+      assignedTo
+    } = validatedData;
 
-        const { title, description, priority, status, type, startDate, endDate, progress, projectId, backlogId, sprintId, parentId, assignedTo } = validatedData;
+    const project = await getProjectById(projectId);
+    if (!project) return res.status(404).json({ error: 'Projet non trouvé.' });
 
-        const [ sprint, ] = await Promise.all([
-            getProjectById(projectId),
-            checkSprintExistence(sprintId),
-        ]);
-
-        if (!sprint ) return res.status(404).json({ error: 'Sprint ou employé non trouvé.' });
-
-        const newTask = await prisma.task.create({
-            data: {
-                title,
-                description,
-                priority,
-                status,
-                type,
-                startDate,
-                endDate,
-                progress,
-                projectId,
-                backlogId,
-                sprintId,
-                parentId: parentId || null,
-                assignedTo
-            }
-        });
-        await updateProjectStatusService(projectId, { status: newTask.status });
-        res.status(201).json({ message: "Tâche créée avec succès", task: newTask });
-    } catch (error) {
-
-        console.error('Erreur lors de la création de la tâche:', error);
-        res.status(500).json({ error: 'Erreur serveur lors de la création de la tâche.' });
+    if (assignedTo) {
+      const employee = await checkEmployeeExistence(assignedTo);
+      if (!employee) return res.status(404).json({ error: "Employé non trouvé." });
     }
+
+    const newTask = await prisma.task.create({
+      data: {
+        title,
+        description,
+        priority,
+        status,
+        type,
+        startDate,
+        endDate,
+        progress,
+        projectId,
+        backlogId: backlogId || null,
+        sprintId: sprintId || null,
+        parentId: parentId || null,
+        assignedTo: assignedTo || null
+      }
+    });
+
+    await updateProjectStatusService(projectId, { status: newTask.status });
+    res.status(201).json({ message: "Tâche créée avec succès", task: newTask });
+
+  } catch (error) {
+    console.error('Erreur lors de la création de la tâche:', error);
+    res.status(500).json({ error: 'Erreur serveur lors de la création de la tâche.' });
+  }
 };
+
+
 
 const getAllTasks = async (req, res) => {
     try {
@@ -138,7 +154,7 @@ const updateTask = async (req, res) => {
             },
             data: validatedData,
         });
-        await updateProjectStatusService(projectId, { status: updatedTask.status });
+       // await updateProjectStatusService(projectId, { status: updatedTask.status });
         res.status(200).json({ message: 'Tâche mise à jour avec succès', task: updatedTask });
     } catch (error) {
 
@@ -563,13 +579,180 @@ const updateProjectStatus = async (projectId) => {
     if (!tasks || tasks.length === 0) return; 
 
     const allDone = tasks.every(task => task.status === "DONE");
-    const newStatus = allDone ? "DONE" : "IN_PROGRESS";
+    const newStatus = allDone ? "COMPLETED" : "ONGOING";
 
     await updateProjectStatusService(projectId, { status: newStatus });
   } catch (error) {
     console.error("Erreur lors de la mise à jour du statut du projet :", error);
   }
 };
+
+const taskTypeSeries = async (req, res) => {
+    const { projectId } = req.query;
+
+    try {
+        if (!projectId) {
+            return res.status(400).json({ error: "projectId est requis." });
+        }
+
+        const result = await prisma.task.groupBy({
+            by: ['type'],
+            where: {
+                projectId: parseInt(projectId),
+            },
+            _count: {
+                type: true,
+            },
+        });
+
+        const series = result.map(item => ({
+            type: item.type,
+            count: item._count.type,
+        }));
+
+        res.status(200).json(series);
+    } catch (error) {
+        console.error("Erreur lors de la génération des statistiques par type de tâche:", error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération des statistiques." });
+    }
+};
+const topEmployee = async (req, res) => {
+    const { projectId } = req.query;
+
+    try {
+        if (!projectId) {
+            return res.status(400).json({ error: "projectId est requis." });
+        }
+
+        const result = await prisma.task.groupBy({
+            by: ['assignedTo'],
+            where: {
+                projectId: parseInt(projectId),
+                assignedTo: {
+                    not: null,
+                },
+            },
+            _count: {
+                assignedTo: true,
+            },
+            orderBy: {
+                _count: {
+                    assignedTo: 'desc',
+                },
+            },
+            take: 1,
+        });
+
+        if (result.length === 0) {
+            return res.status(404).json({ message: "Aucun employé trouvé pour ce projet." });
+        }
+
+        const employee = await getEmployeeById(result[0].assignedTo);
+
+        res.status(200).json({
+            employee,
+            taskCount: result[0]._count.assignedTo,
+        });
+    } catch (error) {
+        console.error("Erreur lors de la récupération du top employé:", error);
+        res.status(500).json({ error: "Erreur serveur lors de la récupération du top employé." });
+    }
+};
+const deleteTasksByProjectId = async (req, res) => {
+    const { projectId } = req.params;
+
+    try {
+        const deleted = await prisma.task.deleteMany({
+            where: { projectId: parseInt(projectId) }
+        });
+
+        res.status(200).json({ message: "Tâches supprimées pour le projet", deletedCount: deleted.count });
+    } catch (error) {
+        console.error('Erreur lors de la suppression des tâches du projet:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la suppression des tâches du projet." });
+    }
+};
+const deleteTasksBySprintId = async (req, res) => {
+    const { sprintId } = req.params;
+
+    try {
+        const deleted = await prisma.task.deleteMany({
+            where: { sprintId: parseInt(sprintId) }
+        });
+
+        res.status(200).json({ message: "Tâches supprimées pour le sprint", deletedCount: deleted.count });
+    } catch (error) {
+        console.error('Erreur lors de la suppression des tâches du sprint:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la suppression des tâches du sprint." });
+    }
+};
+const deleteTasksByBacklogId = async (req, res) => {
+    const { BacklogId } = req.params;
+
+    try {
+        const deleted = await prisma.task.deleteMany({
+            where: { BacklogId: parseInt(BacklogId) }
+        });
+
+        res.status(200).json({ message: "Tâches supprimées pour le sprint", deletedCount: deleted.count });
+    } catch (error) {
+        console.error('Erreur lors de la suppression des tâches du sprint:', error);
+        res.status(500).json({ error: "Erreur serveur lors de la suppression des tâches du sprint." });
+    }
+};
+const getTasksWithoutParentIdAndNotEpic = async (req, res) => {
+  try {
+    const sprintId = parseInt(req.params.sprintId, 10);  // conversion en entier
+
+    if (isNaN(sprintId)) {
+      return res.status(400).json({ error: "SprintId invalide" });
+    }
+
+    const tasks = await prisma.task.findMany({
+      where: {
+        parentId: null,
+        NOT: {
+          type: "EPIC",
+        },
+        sprintId: sprintId,  // maintenant un entier
+      },
+    });
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des tâches sans parentId, non EPIC et par sprintId :", error);
+    res.status(500).json({ error: "Erreur serveur lors de la récupération des tâches." });
+  }
+};
+
+const getTasksByProjectIdAndAssignedTo = async (req, res) => {
+  const { projectId, assignedTo } = req.params;
+
+  if (!projectId || !assignedTo) {
+    return res.status(400).json({ error: "Les paramètres 'projectId' et 'assignedTo' sont requis." });
+  }
+
+  try {
+    const tasks = await prisma.task.findMany({
+      where: {
+        projectId: parseInt(projectId),
+        assignedTo: parseInt(assignedTo),
+      },
+    });
+
+    if (tasks.length === 0) {
+      return res.status(404).json({ error: "Aucune tâche trouvée pour ce projet et cet employé." });
+    }
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des tâches par projet et assigné:', error);
+    res.status(500).json({ error: "Erreur serveur lors de la récupération des tâches." });
+  }
+};
+
+
+
 module.exports = {
     createTask,
     getAllTasks,
@@ -580,6 +763,8 @@ module.exports = {
     getEpicsBySprintId,
     getAllEpics,
     getTasksByProjectId,
+    taskTypeSeries,
+    topEmployee,
     getProjectWithTasks,
     prioritizeTasks,
     updateTaskStatus,
@@ -595,5 +780,10 @@ module.exports = {
     getTasksWithEpicsBySprintId,
     getTasksBySprintIdAndProjectId,
     getTaskWithDetailsById,
-    updateProjectStatus
+    updateProjectStatus,
+deleteTasksByProjectId,
+deleteTasksBySprintId,
+deleteTasksByBacklogId,
+getTasksWithoutParentIdAndNotEpic,
+getTasksByProjectIdAndAssignedTo
 };

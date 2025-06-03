@@ -20,6 +20,7 @@ router.get('/epics/project/:projectId', taskController.getEpicsByProjectId);
 router.get('/epics/sprint/:sprintId', taskController.getEpicsBySprintId);
 router.get('/project/:projectId/sprint/:sprintId', taskController.getTasksBySprintIdAndProjectId);
 router.get('/:id/details', taskController.getTaskWithDetailsById);
+router.get('/project/:projectId/assignedTo/:assignedTo', taskController.getTasksByProjectIdAndAssignedTo);
 
 
 
@@ -35,6 +36,11 @@ router.put('/unassign/:sprintId', taskController.unassignTasksFromSprint);
 router.get('/epic/:epicId/userstories', taskController.getEpicWithUserStories);
 router.get('/grouped', taskController.getTasksGroupedByBacklog);
 router.get('/epics/sprint/:sprintId', taskController.getTasksWithEpicsBySprintId);
-
+router.get('/stats/taskTypeSeries', taskController.taskTypeSeries);
+router.get('/stats/topEmployee', taskController.topEmployee);
+router.delete('/project/:projectId', taskController.deleteTasksByProjectId);
+router.delete('/sprint/:sprintId', taskController.deleteTasksBySprintId);
+router.delete('/backlog/:backlogId', taskController.deleteTasksByBacklogId);
+router.get('/:sprintId/sansepic', taskController.getTasksWithoutParentIdAndNotEpic);
 
 module.exports = router;

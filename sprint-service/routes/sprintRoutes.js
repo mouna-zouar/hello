@@ -21,7 +21,9 @@ router.patch('/:id/open',sprintController.openSprint);
 
 router.get('/project/:projectId', sprintController.getSprintsByProjectId);
 router.get('/backlog/:backlogId',sprintController.getSprintsBybacklogId);
-
+router.delete('/project/:projectId', sprintController.deleteSprintsByProjectId);
+router.delete('/backlog/:backlogId', sprintController.deleteSprintsByBacklogId);
+router.patch('/:id/name', sprintController.updateSprintName);
 
 
 

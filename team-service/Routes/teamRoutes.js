@@ -20,6 +20,9 @@ router.get('/search', teamController.searchTeamByName);
 router.get('/teams-with-employees', teamController.getAllTeamsWithEmployees);
 
 router.get('/statistics', teamController.getTeamStatistics);
+router.get('/team-with-employees/:teamId', teamController.getTeamWithEmployees);
+router.get('/user/:userId', teamController.getTeamsByUserId);
+
 
 //router.put('/assign/:employeeId/:teamId',teamController.assignEmployeeToTeam);
 

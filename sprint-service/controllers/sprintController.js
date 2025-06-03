@@ -329,6 +329,78 @@ const openSprint = async (req, res) => {
     }
 };
 
+const deleteSprintsByProjectId = async (req, res) => {
+    const { projectId } = req.params;
+
+    try {
+        const existingSprints = await prisma.sprint.findMany({
+            where: { projectId: parseInt(projectId) }
+        });
+
+        if (existingSprints.length === 0) {
+            return res.status(404).json({ message: "Aucun sprint trouvé pour ce projet." });
+        }
+
+        await prisma.sprint.deleteMany({
+            where: { projectId: parseInt(projectId) }
+        });
+
+        res.status(200).json({ message: `${existingSprints.length} sprint(s) supprimé(s) pour le projet ${projectId}.` });
+    } catch (error) {
+        console.error("Erreur lors de la suppression des sprints du projet :", error);
+        res.status(500).json({ error: "Erreur serveur lors de la suppression des sprints" });
+    }
+};
+
+const deleteSprintsByBacklogId = async (req, res) => {
+    const { BacklogId } = req.params;
+
+    try {
+        const existingSprints = await prisma.sprint.findMany({
+            where: { BacklogId: parseInt(BacklogId) }
+        });
+
+        if (existingSprints.length === 0) {
+            return res.status(404).json({ message: "Aucun sprint trouvé pour ce projet." });
+        }
+
+        await prisma.sprint.deleteMany({
+            where: { BacklogId: parseInt(BacklogId) }
+        });
+
+        res.status(200).json({ message: `${existingSprints.length} sprint(s) supprimé(s) pour le backlog ${BacklogId}.` });
+    } catch (error) {
+        console.error("Erreur lors de la suppression des sprints du backlog :", error);
+        res.status(500).json({ error: "Erreur serveur lors de la suppression des sprints" });
+    }
+};
+const updateSprintName = async (req, res) => {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name || typeof name !== 'string') {
+        return res.status(400).json({ message: "Le nom du sprint est requis et doit être une chaîne de caractères." });
+    }
+
+    try {
+        const sprint = await prisma.sprint.findUnique({ where: { id: parseInt(id) } });
+
+        if (!sprint) {
+            return res.status(404).json({ message: "Sprint non trouvé" });
+        }
+
+        const updatedSprint = await prisma.sprint.update({
+            where: { id: parseInt(id) },
+            data: { name }
+        });
+
+        res.status(200).json({ message: "Nom du sprint mis à jour avec succès", sprint: updatedSprint });
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour du nom du sprint:", error);
+        res.status(500).json({ message: "Erreur serveur" });
+    }
+};
+
 
 
 module.exports = {
@@ -343,6 +415,9 @@ module.exports = {
     closeSprint,
     getSprintsBybacklogId,
     getProjectWithSprints,
-    openSprint
+    openSprint,
+    deleteSprintsByProjectId,
+    deleteSprintsByBacklogId,
+    updateSprintName
 
 };

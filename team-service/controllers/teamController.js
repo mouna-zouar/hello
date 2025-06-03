@@ -265,6 +265,107 @@ const getTeamStatistics = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors du calcul des statistiques" });
     }
 };
+const getTeamWithEmployees = async (req, res) => {
+  const { teamId } = req.params;
+
+  try {
+    const team = await prisma.team.findUnique({
+      where: { id: parseInt(teamId, 10) }
+    });
+
+    if (!team) {
+      return res.status(404).json({ error: "Équipe non trouvée" });
+    }
+
+    // Récupérer les employés du team via ton microservice
+    const employeesResponse = await axios.get(`http://localhost:3012/api/employees/team?teamId=${team.id}`);
+
+    // Enrichir chaque employé avec les infos utilisateur
+    const employeesWithUserDetails = await Promise.all(
+      employeesResponse.data.map(async (employee) => {
+        try {
+          const employeeWithUser = await axios.get(`http://localhost:3012/api/employees/employee-with-user/${employee.id}`);
+          return {
+            ...employee,
+            user: employeeWithUser.data.user
+          };
+        } catch (userError) {
+          console.error(`Erreur lors de la récupération de l'utilisateur pour l'employé ${employee.id}:`, userError.message);
+          return employee; // Retourne l'employé sans user en cas d'erreur
+        }
+      })
+    );
+
+    res.status(200).json({
+      data: {
+        id: team.id,
+        name: team.name,
+        createdAt: team.createdAt,
+        updatedAt: team.updatedAt,
+        employees: {
+          data: employeesWithUserDetails
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Erreur lors de la récupération de l\'équipe avec employés:', error.message);
+    res.status(500).json({ error: "Erreur serveur lors de la récupération de l'équipe avec ses employés" });
+  }
+};
+const getTeamsByUserId = async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({ error: "L'ID utilisateur est requis" });
+  }
+
+  try {
+    // Récupérer toutes les équipes
+    const teams = await prisma.team.findMany();
+
+    // Filtrer les équipes où l'utilisateur est membre (via les employés)
+    const teamsWhereUserIsMember = [];
+
+    for (const team of teams) {
+      // Récupérer les employés de cette équipe via ton microservice
+      const employeesResponse = await axios.get(`http://localhost:3012/api/employees/team?teamId=${team.id}`);
+
+      // Enrichir les employés avec leurs données utilisateur
+      const employeesWithUserDetails = await Promise.all(
+        employeesResponse.data.map(async (employee) => {
+          try {
+            const employeeWithUser = await axios.get(`http://localhost:3012/api/employees/employee-with-user/${employee.id}`);
+            return {
+              ...employee,
+              user: employeeWithUser.data.user
+            };
+          } catch {
+            return employee;
+          }
+        })
+      );
+
+      // Vérifier si l'utilisateur est membre de cette équipe
+      const isMember = employeesWithUserDetails.some(emp => emp.user && emp.user.id === parseInt(userId, 10));
+
+      if (isMember) {
+        teamsWhereUserIsMember.push({
+          id: team.id,
+          name: team.name,
+          createdAt: team.createdAt,
+          updatedAt: team.updatedAt,
+          employees: { data: employeesWithUserDetails }
+        });
+      }
+    }
+
+    res.status(200).json({ data: teamsWhereUserIsMember });
+
+  } catch (error) {
+    console.error("Erreur lors de la récupération des équipes pour l'utilisateur:", error.message);
+    res.status(500).json({ error: "Erreur serveur lors de la récupération des équipes pour l'utilisateur" });
+  }
+};
 
 
 module.exports = {
@@ -276,4 +377,6 @@ module.exports = {
     deleteTeam,
     getAllTeamsWithEmployees,
     getTeamStatistics,
+    getTeamWithEmployees,
+    getTeamsByUserId
 };

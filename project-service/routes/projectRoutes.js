@@ -24,6 +24,10 @@ router.get('/user/:userId', projectController.getProjectsByUserId);
 router.get('/team/:teamId', projectController.getProjectsByTeamId);
 
 router.put('/:id/status', projectController.updateProjectStatus);
+router.get('/dashboard/stats', projectController.getProjectStats);
+router.patch('/:id/name', projectController.updateProjectName);
+router.patch('/projects/:id/backlog', projectController.updateProjectBacklogId);
+router.get('/aggregated/user/:userId', projectController.getProjectsForUser);
 
 
 module.exports = router;
