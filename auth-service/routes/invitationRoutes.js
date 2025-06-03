@@ -5,10 +5,8 @@ const checkPermission = require("../middlewares/check");
 
 const router = express.Router();
 
-router.post('/invite',(req, res) => {
-    console.log("UserId extrait du token: ", req.userId);
-    inviteUser(req, res);
-});
+router.post('/invite', inviteUser);
+
 
 router.get('/invite/:token',  validateInviteToken);
 

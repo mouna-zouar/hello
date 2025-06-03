@@ -8,53 +8,63 @@ const { permission } = require('process');
 require("dotenv").config();
 
 const prisma = new PrismaClient();
-
 const register = async (req, res) => {
-    try {
-        const validatedData = registerSchema.parse(req.body);
+  try {
+    const validatedData = registerSchema.parse(req.body);
 
-        const existingUser = await prisma.user.findUnique({ where: { email: validatedData.email } });
-        if (existingUser) {
-            return res.status(400).json({ error: "Cet email est déjà utilisé" });
-        }
-
-        validatedData.password = await bcrypt.hash(validatedData.password, 10);
-        const user = await prisma.user.create({
-            data: validatedData
-        });
-
-        try {
-            await produceEvent(EVENTS.USER_CREATED, {
-                id: user.id,
-                email: user.email,
-                username: user.username,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                password:user.password,
-                photo:user.photo,
-                gender :user.gender,
-                status :user.status,
-                roleId:user.roleId,
-                departmentId:user.departmentId,
-            });
-            console.log('Événement Kafka produit avec succès');
-        } catch (error) {
-            console.error('Erreur lors de l\'envoi de l\'événement Kafka:', error);
-            return res.status(500).json({ error: 'Erreur interne de production d\'événement' });
-        }
-
-        res.status(201).json({ message: "Utilisateur créé avec succès", user });
-    } catch (error) {
-        console.error(error);
-        res.status(400).json({ error: error.message || "Erreur lors de l'inscription" });
+    const existingUser = await prisma.user.findUnique({
+      where: { email: validatedData.email },
+    });
+    if (existingUser) {
+      return res.status(400).json({ error: "Cet email est déjà utilisé" });
     }
+
+    validatedData.password = await bcrypt.hash(validatedData.password, 10);
+    const user = await prisma.user.create({
+      data: validatedData,
+    });
+
+    try {
+      await produceEvent(EVENTS.USER_CREATED, {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        password: user.password,
+        photo: user.photo,
+        gender: user.gender,
+        status: user.status,
+        roleId: user.roleId,
+        departmentId: user.departmentId,
+      });
+      console.log("Événement Kafka produit avec succès");
+    } catch (error) {
+      console.error("Erreur lors de l'envoi de l'événement Kafka:", error);
+      return res
+        .status(500)
+        .json({ error: "Erreur interne de production d'événement" });
+    }
+
+    // ✅ Réponse plus claire : retour direct de l'id + infos importantes
+    res.status(201).json({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      message: "Utilisateur créé avec succès",
+    });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(400)
+      .json({ error: error.message || "Erreur lors de l'inscription" });
+  }
 };
 
 const login = async (req, res) => {
     try {
         const { email, password } = loginSchema.parse(req.body);
 
-        // Vérifie si l'utilisateur existe
         const user = await prisma.user.findUnique({
             where: { email },
             include: {
@@ -73,13 +83,11 @@ const login = async (req, res) => {
             return res.status(401).json({ error: "Email ou mot de passe incorrect" });
         }
 
-        // Vérifie si le mot de passe correspond
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ error: "Email ou mot de passe incorrect" });
         }
 
-        // Crée les tokens
         const accessToken = jwt.sign(
             { id: user.id, role: user.role.role },
             process.env.JWT_SECRET,
@@ -91,7 +99,6 @@ const login = async (req, res) => {
             { expiresIn: "3d" }
         );
 
-        // Log la session
         await prisma.sessionLog.create({
             data: {
                 userId: user.id,
@@ -100,7 +107,6 @@ const login = async (req, res) => {
             }
         });
 
-        // Formater les permissions
         const permissions = user.role.permissions.map(rp => ({
             model: rp.permission.model,
             operation: rp.permission.operation

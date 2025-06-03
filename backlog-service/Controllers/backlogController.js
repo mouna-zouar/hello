@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { getProjectById } = require('../services/projectService');
+const { getProjectById,updateProjectBacklogId } = require('../services/projectService');
 const { checkProjectExistence } = require('../kafka/producers');
 const {backlogSchema} = require("../validators/BacklogValidator");
 
@@ -10,13 +10,13 @@ const createBacklog = async (req, res) => {
         const validatedData = backlogSchema.parse(req.body);
         const { name, description, projectId } = validatedData;
 
-       /* const { exists: projectExists } = await checkProjectExistence(projectId);
-        if (!projectExists) {
-            return res.status(404).json({ error: "Projet non trouvé via Kafka." });
-        }*/
+        // Vérifier que le projet existe
         const project = await getProjectById(projectId);
-        console.log(project);
+        if (!project) {
+            return res.status(404).json({ error: "Projet non trouvé" });
+        }
 
+        // Créer le backlog
         const newBacklog = await prisma.backlog.create({
             data: {
                 name,
@@ -24,6 +24,9 @@ const createBacklog = async (req, res) => {
                 projectId: parseInt(projectId)
             },
         });
+
+        // Mettre à jour le backlogId du projet via l'appel au service projet
+        await updateProjectBacklogId(projectId, newBacklog.id);
 
         res.status(201).json({ message: "Backlog créé avec succès", backlog: newBacklog });
     } catch (error) {
@@ -147,6 +150,30 @@ const getBacklogByProjectId = async (req, res) => {
         res.status(500).json({ error: "Erreur serveur lors de la récupération du backlog" });
     }
 };
+const deleteBacklogsByProjectId = async (req, res) => {
+    const { projectId } = req.params;
+
+    try {
+        // Vérifier s'il existe des backlogs pour ce projet
+        const backlogs = await prisma.backlog.findMany({
+            where: { projectId: parseInt(projectId) },
+        });
+
+        if (!backlogs || backlogs.length === 0) {
+            return res.status(404).json({ error: "Aucun backlog trouvé pour ce projet" });
+        }
+
+        // Supprimer tous les backlogs associés à ce projet
+        await prisma.backlog.deleteMany({
+            where: { projectId: parseInt(projectId) },
+        });
+
+        res.status(200).json({ message: "Tous les backlogs du projet ont été supprimés avec succès" });
+    } catch (error) {
+        console.error("Erreur lors de la suppression des backlogs par projectId:", error);
+        res.status(500).json({ error: "Erreur serveur lors de la suppression des backlogs du projet" });
+    }
+};
 
 
 module.exports = {
@@ -155,5 +182,6 @@ module.exports = {
     getBacklogById,
     updateBacklog,
     deleteBacklog,
-    getBacklogByProjectId
+    getBacklogByProjectId,
+    deleteBacklogsByProjectId
 };
