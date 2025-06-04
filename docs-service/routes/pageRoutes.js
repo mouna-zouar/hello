@@ -13,5 +13,10 @@ router.post('/:id/share', pageController.sharePage);
 router.get('/search', pageController.searchPages);
 
 router.post('/:id/git-push', pageController.pushToGit);
+router.get('/page/:id', pageController.getPageById);
+router.get('/project/:projectId/pages', pageController.getPagesByProjectId);
+router.delete('/:id', pageController.deletePage);
+router.post('/:id/git-unlink', pageController.unlinkFromGit);
+
 
 module.exports = router;

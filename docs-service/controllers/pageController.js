@@ -76,7 +76,7 @@ const updatePage = async (req, res) => {
 const getPageVersions = async (req, res) => {
   const { id } = req.params;
   try {
-    const versions = await prisma.PageVersion.findMany({
+    const versions = await prisma.pageVersion.findMany({
       where: { pageId: parseInt(id) },
       orderBy: { createdAt: 'desc' },
     });
@@ -150,7 +150,7 @@ const pushToGit = async (req, res) => {
     const git = simpleGit(repoPath);
 
     const safeTitle = page.title.replace(/[^\w\-]/g, '_');
-    const filePath = path.join(repoPath, `${safeTitle}.md`);
+    const filePath = path.join(repoPath, `${safeTitle}.txt`);
     await fs.writeFile(filePath, page.content);
 
     const isRepo = await git.checkIsRepo();
@@ -189,8 +189,94 @@ const pushToGit = async (req, res) => {
   }
 };
 
+const getPagesByProjectId = async (req, res) => {
+  const { projectId } = req.params;
+  try {
+    const pages = await prisma.page.findMany({
+      where: {
+        projectId: parseInt(projectId),
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    res.json(pages);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des pages du projet' });
+  }
+};
+
+const getPageById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const page = await prisma.page.findUnique({
+      where: {
+        id: parseInt(id),
+      },
+    });
+
+    if (!page) {
+      return res.status(404).json({ error: 'Page non trouvée' });
+    }
+
+    res.json(page);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erreur lors de la récupération de la page' });
+  }
+};
+const deletePage = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const page = await prisma.page.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!page) {
+      return res.status(404).json({ error: 'Page non trouvée' });
+    }
+
+    await prisma.pageVersion.deleteMany({ where: { pageId: parseInt(id) } });
+    await prisma.pageAccess.deleteMany({ where: { pageId: parseInt(id) } });
+
+    await prisma.page.delete({
+      where: { id: parseInt(id) },
+    });
+
+    res.json({ message: 'Page supprimée avec succès' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erreur lors de la suppression de la page' });
+  }
+};
 
 
+const unlinkFromGit = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const page = await prisma.page.findUnique({ where: { id: parseInt(id) } });
+    if (!page) return res.status(404).json({ error: 'Page non trouvée' });
+
+    const canEdit = await hasEditAccess(id, userId);
+    if (!canEdit) return res.status(403).json({ error: 'Accès refusé' });
+
+    const repoPath = path.resolve(__dirname, '../git-repos', String(id));
+
+    // Supprimer le dossier du repo local
+    await fs.rm(repoPath, { recursive: true, force: true });
+
+    res.json({ message: 'Le dépôt Git a été dissocié avec succès de cette page' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erreur lors de la suppression du dépôt Git" });
+  }
+};
 
 
 module.exports = {
@@ -200,5 +286,9 @@ module.exports = {
   sharePage,
   searchPages,
   pushToGit,
-  hasEditAccess
+  hasEditAccess,
+  getPagesByProjectId,
+  getPageById,
+  deletePage,
+  unlinkFromGit
 };
